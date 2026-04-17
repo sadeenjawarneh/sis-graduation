@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Join Available Teams</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            display: flex; /* ترتيب السايدبار جنب المحتوى */
+            min-height: 100vh;
+            background: #f8fafc;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            z-index: 1000;
+        }
+
+        .container {
+            flex-grow: 1;
+            margin-left: 280px; /* نفس عرض السايدبار */
+            width: calc(100% - 280px); /* يأخذ باقي مساحة الشاشة */
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* يخلي المحتوى بالمنتصف */
+        }
+
+        .header {
+            width: 100%;
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .teams-grid {
+            width: 100%;
+            max-width: 600px; /* عرض الكروت */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .team-card {
+            width: 100%;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s;
+            border: 1px solid #edf2f7;
+            position: relative;
+        }
+
+        .team-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .team-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-full {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .team-card h3 {
+            color: #1a237e;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+
+        .team-card p {
+            color: #64748b;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .team-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .members-count {
+            background: #e0e7ff;
+            color: #1e40af;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .join-btn {
+            width: 100%;
+            padding: 12px;
+            background: #1a237e;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+
+        .join-btn:hover:not(:disabled) {
+            background: #1e3a8a;
+            transform: translateY(-2px);
+        }
+
+        .join-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 500;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item.active {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: #f1f5f9;
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <aside class="sidebar">
+        <div class="logo-area">
+            <i class="fas fa-university" style="font-size: 1.5rem;"></i>
+            <span>Graduation Teams</span>
+        </div>
+
+        <nav class="nav-links">
+        <a href="{% url 'join_team' %}" class="nav-item active"><i class="fas fa-columns"></i> Manage Teams</a>
+        <a href="{% url 'student_dashboard' %}" class="nav-item"><i class="fas fa-layer-group"></i> My Team</a>
+        <a href="#" class="nav-item"><i class="fas fa-file-contract"></i> Submission</a>
+        <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Deadlines</a>
+
+        <a href="{% url 'logout_user' %}" class="nav-item logout-btn" style="margin-top: auto; color: #ef4444; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+            <i class="fas fa-sign-out-alt"></i> 
+            <span>Logout</span>
+        </a>
+    </nav>
+    </aside>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fa-solid fa-users"></i> Available Teams</h1>
+            <p>Join a team that matches your project interests (Max 5 members per team)</p>
+        </div>
+
+        <div class="teams-grid">
+            {% for team in teams %}
+            <div class="team-card">
+
+                {% if team.actual_member_count >= 5 %}
+                <span class="team-status status-full">FULL (5/5)</span>
+                {% else %}
+                <span class="team-status status-active">Active</span>
+                {% endif %}
+
+                <h3>{{ team.name }}</h3>
+                <p>{{ team.description }}</p>
+
+                <div class="team-meta">
+                    <span class="members-count">
+                        <i class="fa-solid fa-users"></i> {{ team.actual_member_count }}/5
+                    </span>
+                    <small>Leader: {{ team.leader.username }}</small>
+                </div>
+
+                <div class="actions">
+                    {% if team.id in pending_teams_ids %}
+                    <form method="POST" action="{% url 'cancel_join_request' team.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="join-btn" style="background: #ef4444;">
+                            <i class="fa-solid fa-xmark"></i> Cancel Request
+                        </button>
+                    </form>
+
+                    {% elif team.actual_member_count >= 5 %}
+                    <button class="join-btn" disabled style="background: #9ca3af;">
+                        <i class="fa-solid fa-lock"></i> Team is Full
+                    </button>
+
+                    {% else %}
+                    <form method="POST" action="{% url 'send_join_request' team.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="join-btn">
+                            <i class="fa-solid fa-paper-plane"></i> Request to Join
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div> {% empty %}
+            <div class="empty-state">
+                <i class="fa-solid fa-circle-info"></i>
+                <p>No teams available right now.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+
+</html>

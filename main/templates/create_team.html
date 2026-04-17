@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Your Team</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #1a237e; --bg: #f4f7fc; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+        }
+
+        /* حاوية الكرت الأساسية */
+        .setup-card { 
+            position: relative; 
+            background: white; 
+            padding: 2.5rem 2rem 2rem 2rem; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 500px; 
+            margin-top: 40px; /* مساحة لبروز الستيكر */
+        }
+
+        /* تصميم الستيكر */
+        .sticker-container {
+            position: absolute;
+            top: -60px; /* تجعل الصورة تبرز خارج الكرت */
+            left: 50%;
+            transform: translateX(-50%) rotate(-3deg); /* تمييل الستيكر */
+            z-index: 10;
+        }
+
+        .sticker-img {
+            width: 130px; 
+            height: auto;
+            background: white;
+            padding: 5px;
+            border: 6px solid white; /* الحواف البيضاء للستيكر */
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); /* ظل الستيكر */
+            transition: 0.3s ease;
+        }
+
+        .sticker-img:hover {
+            transform: scale(1.1) rotate(0deg); /* تكبير بسيط عند اللمس */
+        }
+
+        .header { text-align: center; margin-bottom: 2rem; margin-top: 50px; }
+        .header i { font-size: 2rem; color: var(--primary); margin-bottom: 1rem; opacity: 0.5; }
+        
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333; }
+        
+        input, textarea { 
+            width: 100%; 
+            padding: 0.8rem; 
+            border: 2px solid #e0e0e0; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            transition: 0.3s; 
+            font-family: inherit;
+        }
+        
+        input:focus, textarea:focus { border-color: var(--primary); outline: none; }
+        
+        .btn-submit { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 1rem; 
+            width: 100%; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1rem;
+        }
+        
+        .btn-submit:hover { background: #283593; transform: translateY(-2px); }
+        
+        .alert { padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; }
+        .alert-error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    </style>
+</head>
+<body>
+
+<div class="setup-card">
+    <div class="sticker-container">
+     
+    </div>
+
+    <div class="header">
+        <i class="fas fa-users-cog"></i>
+        <h2>Create New Project Team</h2>
+        <p style="color: #666;">Step 1: Set up your team as a Leader</p>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> {{ message }}</div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label><i class="fas fa-tag"></i> Team Name</label>
+            <input type="text" name="team_name" placeholder="Ex: Smart City System" required>
+        </div>
+
+        <div class="form-group">
+            <label><i class="fas fa-align-left"></i> Project Description & Members</label>
+            <textarea name="description" rows="4" placeholder="Enter names, IDs and project goal..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit">
+            Create Team & Go to Dashboard <i class="fas fa-arrow-right"></i>
+        </button>
+    </form>
+    
+    <p style="text-align: center; margin-top: 1.5rem;">
+        <a href="{% url 'student_dashboard' %}" style="color: #666; text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+            <i class="fas fa-chevron-left"></i> Cancel and back
+        </a>
+    </p>
+</div>
+
+</body>
+</html>

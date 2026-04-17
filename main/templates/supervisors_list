@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Select Your Supervisor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: #f4f7fc; padding: 30px; color: #1e293b; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .header { margin-bottom: 30px; display: flex; align-items: center; gap: 15px; }
+        .back-btn { background: #fff; border: 1px solid #ddd; padding: 8px 15px; border-radius: 8px; cursor: pointer; color: #1a237e; text-decoration: none; font-size: 14px; font-weight: 600; transition: 0.3s; }
+        .back-btn:hover { background: #1a237e; color: #fff; }
+        h1 { font-size: 24px; color: #1a237e; }
+        p.desc { color: #64748b; font-size: 14px; margin-top: 5px; }
+        .supervisor-list { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .supervisor-card { 
+            background: #fff; padding: 15px; border-radius: 12px; display: flex; 
+            align-items: center; justify-content: space-between; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; border: 1px solid transparent;
+        }
+        .supervisor-card:hover { transform: translateY(-3px); border-color: #1a237e; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .info-section { display: flex; align-items: center; gap: 15px; }
+        .doc-img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #e7f0ff; border: 2px solid #f0f4ff; }
+        .doc-details b { font-size: 16px; color: #1a237e; display: block; margin-bottom: 2px; }
+        .doc-details span { font-size: 12px; color: #64748b; font-weight: 500; }
+        .request-btn { background: #28a745; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; transition: 0.3s; min-width: 150px; }
+        /* ستايل لما ينبعث الطلب يصير أحمر للإلغاء */
+        .request-btn.sent { background: #d32f2f; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <a href="create_team.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        <div>
+            <h1>Academic Supervisors</h1>
+            <p class="desc">Select your top 3 preferred supervisors</p>
+        </div>
+    </div>
+
+    <div class="supervisor-list" id="supervisorList">
+        </div>
+</div>
+
+<script>
+    const docs = [
+        "Dr. Mohammed Radaideh", "Dr. Hamza Alkofahi", "Dr. Yanal Alahmad", 
+        "Dr. Khaldoon Alzoubi", "Dr. Malik Qasimeh", "Dr. Hasan Albzoor", 
+        "Dr. Zakarea Alshara", "Dr. Raed Shatnawi", "Dr. Asmahan Alhasan", "Dr. Luay Alawneh"
+    ];
+
+    const currentTeam = JSON.parse(localStorage.getItem('currentTeam'));
+
+    function renderDocs() {
+        const list = document.getElementById('supervisorList');
+        if (!list) return;
+        
+        list.innerHTML = ""; 
+
+        // جلب الطلبات
+        const allRequests = JSON.parse(localStorage.getItem('allSupervisorRequests')) || [];
+
+        // فلترة الطلبات الخاصة بهذا التيم فقط لتعيين الأولويات
+        const myTeamRequests = allRequests.filter(r => currentTeam && r.teamName === currentTeam.name);
+
+        docs.forEach(docName => {
+            // البحث عن ترتيب هذا الدكتور في طلبات التيم
+            const requestIndex = myTeamRequests.findIndex(r => r.docName === docName);
+            const isSelected = requestIndex !== -1;
+
+            const card = document.createElement('div');
+            card.className = 'supervisor-card';
+            card.innerHTML = `
+                <div class="info-section">
+                    <img src="https://ui-avatars.com/api/?name=${docName.replace(' ', '+')}&background=1a237e&color=fff" class="doc-img">
+                    <div class="doc-details">
+                        <b>${docName}</b>
+                        <span>Software Engineering Department</span>
+                    </div>
+                </div>
+                <button class="request-btn ${isSelected ? 'sent' : ''}" onclick="handleRequest('${docName}')">
+                    ${isSelected ? `Cancel (Priority ${requestIndex + 1})` : 'Send Request'}
+                </button>
+            `;
+            list.appendChild(card);
+        });
+    }
+
+    function handleRequest(docName) {
+        if (!currentTeam) {
+            alert("Please create a team first!");
+            return;
+        }
+
+        let allRequests = JSON.parse(localStorage.getItem('allSupervisorRequests')) || [];
+
+        // إيجاد مكان الطلب في القائمة العامة
+        const globalIndex = allRequests.findIndex(r => 
+            r.teamName === currentTeam.name && r.docName === docName
+        );
+
+        if (globalIndex !== -1) {
+            // إلغاء الطلب
+            allRequests.splice(globalIndex, 1);
+        } else {
+            // فحص إذا وصل للحد الأقصى (3 طلبات)
+            const myTeamRequestsCount = allRequests.filter(r => r.teamName === currentTeam.name).length;
+            if (myTeamRequestsCount >= 3) {
+                alert("You can only select up to 3 supervisors!");
+                return;
+            }
+
+            // إضافة طلب جديد
+            allRequests.push({
+                teamName: currentTeam.name,
+                teamDescription: currentTeam.description,
+                docName: docName,
+                status: 'pending'
+            });
+        }
+
+        localStorage.setItem('allSupervisorRequests', JSON.stringify(allRequests));
+        renderDocs();
+    }
+
+    document.addEventListener("DOMContentLoaded", renderDocs);
+</script>
+</body>
+</html>

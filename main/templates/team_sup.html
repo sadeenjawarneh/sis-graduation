@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Team Submission</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+body{
+    font-family:'Inter',sans-serif;
+    background:#f4f7fc;
+    margin:0;
+}
+
+.container{
+    max-width:900px;
+    margin:40px auto;
+    padding:20px;
+}
+
+h1{
+    color:#1a237e;
+    margin-bottom:10px;
+}
+
+/* ================= FILE & MEETING CARDS ================= */
+.card{
+    background:#fff;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+    margin-bottom:20px;
+}
+
+label{
+    font-weight:600;
+    display:block;
+    margin-bottom:5px;
+    font-size:14px;
+}
+
+input[type="text"], input[type="datetime-local"], input[type="file"]{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ddd;
+    margin-bottom:15px;
+    font-size:14px;
+}
+
+button{
+    background:#1a237e;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+button:hover{
+    background:#0f1763;
+}
+
+.item{
+    padding:10px;
+    border:1px solid #eee;
+    border-radius:8px;
+    margin-bottom:10px;
+    font-size:13px;
+}
+
+.status.pending{ color:orange; }
+.status.approved{ color:green; }
+.status.rejected{ color:red; }
+
+/* ================= NOTIFICATIONS ================= */
+.notification-wrapper{
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 300px;
+}
+.notification-btn{
+    position: relative;
+    cursor: pointer;
+    font-size: 22px;
+    color: #1a237e;
+}
+.notification-btn .dot{
+    position: absolute;
+    top:-5px;
+    right:-5px;
+    width:12px;
+    height:12px;
+    background:red;
+    border-radius:50%;
+    display:none;
+}
+#notifBox{
+    display:none;
+    position: absolute;
+    top:30px;
+    right:0;
+    background:white;
+    border:1px solid #ddd;
+    border-radius:8px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    padding:10px;
+    max-height:300px;
+    overflow-y:auto;
+    font-size:13px;
+}
+#notifBox div{
+    margin-bottom:5px;
+    border-bottom:1px solid #eee;
+    padding-bottom:3px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1><i class="fa-solid fa-file-arrow-up"></i> Team Submission</h1>
+
+    <div class="team-box" id="teamInfoBox"></div>
+
+    <!-- ================= FILE UPLOAD ================= -->
+    <div class="card">
+        <h3>Upload File (Team Submission)</h3>
+
+        <input type="file" id="fileInput">
+
+        <button onclick="uploadFile()">
+            <i class="fa-solid fa-upload"></i> Upload File
+        </button>
+
+        <hr style="margin:20px 0">
+
+        <h4>Team Uploaded Files</h4>
+        <div id="fileList"></div>
+    </div>
+
+    <!-- ================= MEETING ================= -->
+    <div class="card">
+        <h3>Request Meeting with Supervisor</h3>
+
+        <label>Meeting Topic</label>
+        <input type="text" id="meetingTopic">
+
+        <label>Preferred Date</label>
+        <input type="datetime-local" id="meetingDate">
+
+        <button onclick="requestMeeting()">
+            <i class="fa-solid fa-calendar-plus"></i> Request Meeting
+        </button>
+
+        <hr style="margin:20px 0">
+
+        <h4>Team Meeting Requests</h4>
+        <div id="meetingList"></div>
+    </div>
+
+</div>
+
+<!-- ================= NOTIFICATIONS ================= -->
+<div class="notification-wrapper">
+    <div class="notification-btn" id="notifBtn">
+        <i class="fa-solid fa-bell"></i>
+        <span class="dot" id="notifDot"></span>
+    </div>
+    <div id="notifBox"></div>
+</div>
+
+<script>
+// ================= TEAM DATA =================
+const team = JSON.parse(localStorage.getItem("currentTeam"));
+
+if(!team){
+    alert("No team found. Please create a team first.");
+    window.location.href = "change-new-team.html";
+}
+
+document.getElementById("teamInfoBox").innerHTML = `
+    <strong>Team:</strong> ${team.name} <br>
+    <strong>Admin:</strong> ${team.admin}
+`;
+
+// ================= NOTIFICATIONS =================
+const notifBtn = document.getElementById("notifBtn");
+const notifBox = document.getElementById("notifBox");
+const notifDot = document.getElementById("notifDot");
+
+function showNotification(msg){
+    notifDot.style.display = "block";
+    const div = document.createElement("div");
+    div.innerHTML = `🔔 ${msg}`;
+    notifBox.prepend(div);
+    notifBox.style.display = "block";
+}
+
+notifBtn.onclick = ()=>{
+    notifBox.style.display = notifBox.style.display==="block"?"none":"block";
+    if(notifBox.style.display==="none"){
+        notifDot.style.display="none";
+    }
+}
+
+// ================= FILE UPLOAD =================
+function uploadFile(){
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
+
+    if(!file){
+        alert("Please select a file.");
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+        let uploads = JSON.parse(localStorage.getItem("teamFiles")) || [];
+
+        uploads.push({
+            teamName: team.name,
+            admin: team.admin,
+            fileName: file.name,
+            fileData: e.target.result,
+            date: new Date().toLocaleString()
+        });
+
+        localStorage.setItem("teamFiles", JSON.stringify(uploads));
+        fileInput.value="";
+        loadFiles();
+        showNotification(`File "${file.name}" uploaded successfully!`);
+    }
+
+    reader.readAsDataURL(file);
+}
+
+function loadFiles(){
+    const fileList = document.getElementById("fileList");
+    let uploads = JSON.parse(localStorage.getItem("teamFiles")) || [];
+
+    fileList.innerHTML="";
+
+    uploads.forEach(file=>{
+        if(file.teamName === team.name){
+            const div = document.createElement("div");
+            div.className="item";
+            div.innerHTML = `
+                <strong>${file.fileName}</strong><br>
+                Uploaded: ${file.date}<br>
+                <a href="${file.fileData}" download="${file.fileName}">Download</a>
+            `;
+            fileList.appendChild(div);
+        }
+    });
+}
+
+// ================= MEETING REQUEST =================
+function requestMeeting(){
+    const topic = document.getElementById("meetingTopic").value.trim();
+    const date = document.getElementById("meetingDate").value;
+
+    if(!topic || !date){
+        alert("Fill all fields.");
+        return;
+    }
+
+    let meetings = JSON.parse(localStorage.getItem("teamMeetings")) || [];
+
+    meetings.push({
+        teamName: team.name,
+        admin: team.admin,
+        topic: topic,
+        date: date,
+        status: "pending",
+        link: "" // the link will appear when supervisor approves
+    });
+
+    localStorage.setItem("teamMeetings", JSON.stringify(meetings));
+
+    document.getElementById("meetingTopic").value="";
+    document.getElementById("meetingDate").value="";
+
+    loadMeetings();
+    showNotification(`Meeting request "${topic}" sent successfully!`);
+}
+
+function loadMeetings(){
+    const meetingList = document.getElementById("meetingList");
+    let meetings = JSON.parse(localStorage.getItem("teamMeetings")) || [];
+
+    meetingList.innerHTML="";
+
+    meetings.forEach(meeting=>{
+        if(meeting.teamName === team.name){
+            const div = document.createElement("div");
+            div.className="item";
+            div.innerHTML = `
+                <strong>${meeting.topic}</strong><br>
+                Date: ${meeting.date}<br>
+                Status: <span class="status ${meeting.status}">${meeting.status}</span>
+                ${meeting.link ? `<br>Link: <a href="${meeting.link}" target="_blank">${meeting.link}</a>` : ""}
+            `;
+            meetingList.appendChild(div);
+        }
+    });
+}
+
+// ================= INITIALIZE =================
+document.addEventListener("DOMContentLoaded", ()=>{
+    loadFiles();
+    loadMeetings();
+});
+</script>
+
+</body>
+</html>

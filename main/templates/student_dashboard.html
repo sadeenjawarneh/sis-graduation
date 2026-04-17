@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Academic Portal | Graduation System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --brand-primary: #1a237e;
+            --brand-secondary: #3949ab;
+            --accent: #6366f1;
+            --bg-body: #f8fafc;
+            --text-main: #1e293b;
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* --- Sidebar القائمة الجانبية --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            padding: 40px 25px;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--brand-primary);
+            font-weight: 800;
+            font-size: 1.3rem;
+            margin-bottom: 60px;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex-grow: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 14px 18px;
+            text-decoration: none;
+            color: #64748b;
+            font-weight: 600;
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #eef2ff;
+            color: var(--brand-secondary);
+        }
+
+        .logout-btn {
+            color: #ef4444;
+            margin-top: auto;
+        }
+
+        /* --- المحتوى الرئيسي --- */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex-grow: 1;
+            padding: 40px 60px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-user-bar {
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 50px;
+        }
+
+        .user-pill {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+            font-weight: 700;
+            border: 1px solid #f1f5f9;
+        }
+
+        /* --- تصميم كرت الفريق الإبداعي (Creative UI) --- */
+        .creative-team-card {
+            background: white;
+            width: 100%;
+            max-width: 900px;
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(26, 35, 126, 0.05);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            position: relative;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        /* أيقونة خلفية للديكور */
+        .card-bg-icon {
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            font-size: 16rem;
+            color: #f1f5f9;
+            z-index: 0;
+            opacity: 0.7;
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+
+        .card-content-wrap {
+            position: relative;
+            z-index: 2;
+        }
+
+        .status-tag-creative {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        } 
+        
+        .tag-pending-creative { background: #fffbeb; color: #b45309; border: 1px solid #fef3c7; }
+        .tag-active-creative { background: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+
+        .team-title-creative h2 {
+            font-size: 2.5rem;
+            margin: 0 0 15px 0;
+            color: var(--brand-primary);
+            font-weight: 800;
+            letter-spacing: -1.5px;
+        }
+
+        .team-desc-creative {
+            color: #64748b;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+            line-height: 1.6;
+        }
+
+        /* --- شبكة الأعضاء المطورة --- */
+        .members-section-creative {
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
+
+        .members-grid-creative {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 20px;
+        }
+
+        .member-card-creative {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 25px 15px;
+            border-radius: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .member-card-creative:hover {
+            background: white;
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border-color: var(--accent);
+        }
+
+        .avatar-wrap-creative {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        .avatar-wrap-creative img {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .crown-icon-creative {
+            position: absolute;
+            top: -10px;
+            right: -5px;
+            color: #f59e0b;
+            font-size: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .m-name-creative {
+            display: block;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+
+        .m-role-creative {
+            font-size: 0.75rem;
+            color: var(--brand-secondary);
+            background: #e0e7ff;
+            padding: 3px 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        /* --- الأزرار المطورة --- */
+        .creative-btn-main {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #1a237e, #4338ca);
+            color: white;
+            text-decoration: none;
+            padding: 18px 50px;
+            border-radius: 20px;
+            font-weight: 700;
+            transition: 0.3s;
+            box-shadow: 0 10px 25px rgba(67, 56, 202, 0.3);
+            font-size: 1.1rem;
+            width: 100%;
+        }
+
+        .creative-btn-main:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 35px rgba(67, 56, 202, 0.4);
+        }
+
+        .leave-link-creative {
+            display: block;
+            margin-top: 30px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .leave-link-creative:hover { color: #ef4444; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="logo-area">
+            <i class="fas fa-university" style="font-size: 1.5rem;"></i>
+            <span>Graduation Teams</span>
+        </div>
+
+        <nav class="nav-links">
+            <a href="#" class="nav-item active"><i class="fas fa-columns"></i> Manage Teams</a>
+            <a href="#" class="nav-item"><i class="fas fa-layer-group"></i> My Team</a>
+            <a href="#" class="nav-item"><i class="fas fa-file-contract"></i> Submission</a>
+            <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i> Deadlines</a>
+            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #f1f5f9;">
+            <a href="{% url 'logout_user' %}" class="nav-item" style="color: #ef4444; text-decoration: none; display: flex; align-items: center; gap: 12px; padding: 12px 18px; font-weight: 600; transition: 0.3s;">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+            </a>
+            </div>
+            <a href="{% url 'logout_user' %}" class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-user-bar">
+            <div class="user-pill">
+                <i class="fas fa-bell" style="color: #64748b; margin-right: 10px;"></i>
+                <img src="https://ui-avatars.com/api/?name={{ request.session.user_name }}&background=1a237e&color=fff&bold=true" style="width: 32px; border-radius: 50%;">
+                <span>{{ request.session.user_name }}</span>
+                <i class="fas fa-chevron-down" style="font-size: 10px; color: #94a3b8; margin-left: 5px;"></i>
+            </div>
+        </header>
+
+
+        <div style="text-align: center; margin-bottom: 50px;">
+            <h1 style="font-size: 2.8rem; color: var(--brand-primary); margin: 0; font-weight: 800; letter-spacing: -1.5px;">Your Current Team</h1>
+            <p style="color: #64748b; font-size: 1.1rem; margin-top: 5px;">You are part of an active project group</p>
+        </div>
+{% if pending_requests %}
+<div class="requests-section" style="width: 100%; max-width: 900px; margin-bottom: 35px; animation: fadeIn 0.5s ease;">
+    <h4 style="color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-bell" style="color: #f59e0b;"></i> New Join Requests
+        <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem;">{{ pending_requests|length }}</span>
+    </h4>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+        {% for req in pending_requests %}
+        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 25px rgba(0,0,0,0.03); transition: 0.3s; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <img src="https://ui-avatars.com/api/?name={{ req.user.username }}&background=6366f1&color=fff&bold=true" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #eef2ff;">
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-weight: 700; font-size: 0.95rem; color: #1e293b;">{{ req.user.username }}</span>
+                    <small style="color: #94a3b8; font-size: 0.75rem;">Wants to join</small>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+                <button onclick="handleRequest({{ req.id }}, 'approve')" title="Approve" style="border: none; background: #f0fdf4; color: #16a34a; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button onclick="handleRequest({{ req.id }}, 'reject')" title="Reject" style="border: none; background: #fef2f2; color: #dc2626; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% csrf_token %}
+
+        {% if user_has_team %}
+        <div class="creative-team-card">
+            <i class="fas fa-rocket card-bg-icon"></i>
+            
+            <div class="card-content-wrap">
+                <div class="team-title-creative">
+                    {% if is_pending %}
+                        <div class="status-tag-creative tag-pending-creative">
+                            <i class="fas fa-hourglass-half fa-spin"></i> Pending Approval
+                        </div>
+                    {% else %}
+                        <div class="status-tag-creative tag-active-creative">
+                            <i class="fas fa-check-double"></i> Verified Team
+                        </div>
+                    {% endif %}
+                    <h2>{{ team.name }}</h2>
+                    <p class="team-desc-creative">
+                        {{ team.description|default:"Welcome to your graduation project hub! Here you can collaborate, share files, and finalizing your graduation. Wait for the approval to enter." }}
+                    </p>
+                </div>
+
+                <div class="members-section-creative">
+                    <h4 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; ">
+                        <i class="fas fa-users-viewfinder" style="color: var(--accent);"></i> Project Teammates
+                    </h4>
+                    
+                    <div class="members-grid-creative">
+                        {% for m in team.memberships.all %}
+                            {% if m.role != 'Pending' %}
+                            <div class="member-card-creative">
+                                <div class="avatar-wrap-creative">
+                                    <img src="https://ui-avatars.com/api/?name={{ m.user.username }}&background=6366f1&color=fff&bold=true" alt="Teammate">
+                                    {% if m.role == 'Leader' %}
+                                        <i class="fas fa-crown crown-icon-creative"></i>
+                                    {% endif %}
+                                </div>
+                                <span class="m-name-creative">{{ m.user.first_name|default:m.user.username }}</span>
+                                <span class="m-role-creative">{{ m.role }}</span>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if is_pending %}
+                    <div id="request-row-{{ req.id }}" style="background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 18px; display: flex; align-items: center; justify-content: space-between;">
+                        <i class="fas fa-shield-halved"></i> Access to workspace is restricted until the leader accepts your join request.
+                    </div>
+                {% else %}
+                    <a href="{% url 'team_page' team.id %}" class="creative-btn-main">
+                        <i class="fas fa-door-open"></i> Enter Team Workspace
+                    </a>
+                {% endif %}
+
+                <a href="{% url 'leave_team' %}" class="leave-link-creative">Leave Team</a>
+            </div>
+        </div>
+      {% else %}
+        <div class="options-grid-wrapper" style="width: 100%; max-width: 1100px; display: flex; justify-content: center; margin-top: 20px;">
+            <style>
+                /* كود الـ CSS الخاص بالكرتات لضمان التنسيق */
+                .options-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                    gap: 30px;
+                    width: 100%;
+                }
+                .action-card {
+                    background: #fff;
+                    border-radius: 25px;
+                    overflow: hidden;
+                    border: 1px solid #e2e8f0;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    display: flex;
+                    flex-direction: column;
+                }
+                .action-card:hover {
+                    transform: translateY(-10px);
+                    border-color: var(--accent);
+                    box-shadow: 0 20px 40px rgba(99, 102, 241, 0.1);
+                }
+                .card-img-top {
+                    width: 100%;
+                    height: 220px;
+                    overflow: hidden;
+                    border-bottom: 1px solid #f1f5f9;
+                }
+                .card-img-top img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    transition: transform 0.5s ease;
+                }
+                .action-card:hover .card-img-top img {
+                    transform: scale(1.1);
+                }
+                .card-body-fancy {
+                    padding: 35px;
+                    text-align: center;
+                }
+                .card-body-fancy h2 {
+                    font-size: 1.6rem;
+                    margin-bottom: 12px;
+                    color: var(--brand-primary);
+                    font-weight: 800;
+                }
+                .card-body-fancy p {
+                    color: #64748b;
+                    line-height: 1.6;
+                    margin-bottom: 30px;
+                    font-size: 0.95rem;
+                }
+                .btn-fancy-link {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    padding: 15px;
+                    border-radius: 15px;
+                    text-decoration: none;
+                    font-weight: 700;
+                    transition: 0.3s;
+                }
+                .btn-create-fancy { background: var(--brand-primary); color: white; }
+                .btn-join-fancy { background: #10b981; color: white; } /* لون أخضر جميل للانضمام */
+                .btn-fancy-link:hover { filter: brightness(1.1); transform: scale(1.02); }
+            </style>
+
+            <div class="options-grid">
+                <div class="action-card">
+                    <div class="card-img-top">
+                        <img src="https://i.postimg.cc/BvKz0Gz7/5935843600388262844.jpg" alt="Create Team">
+                    </div>
+                    <div class="card-body-fancy">
+                        <h2>Create New Team</h2>
+                        <p>Start a fresh journey! Form your own project group and lead your teammates to success.</p>
+                        <a href="{% url 'create_team' %}" class="btn-fancy-link btn-create-fancy">
+                            Create Team <i class="fas fa-plus-circle"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="action-card">
+                    <div class="card-img-top">
+                        <img src="https://i.postimg.cc/k5QysMZp/5935843600388262845.jpg" alt="Join Team">
+                    </div>
+                    <div class="card-body-fancy">
+                        <h2>Join Existing Team</h2>
+                        <p>Have a team code? Enter it to join your colleagues and start collaborating on your project.</p>
+                        <a href="{% url 'join_team' %}" class="btn-fancy-link btn-join-fancy">
+                            Join Team <i class="fas fa-sign-in-alt"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+
+    </main>
+
+<form style="display:none;">
+    {% csrf_token %}
+</form>
+
+<script>
+    // منطق فتح وإغلاق الإشعارات
+    const notifBtn = document.getElementById('notifBtn');
+    const notifBox = document.getElementById('notifBox');
+
+    if(notifBtn) {
+        notifBtn.onclick = (e) => {
+            e.stopPropagation();
+            notifBox.style.display = notifBox.style.display === 'block' ? 'none' : 'block';
+        };
+    }
+
+    document.onclick = () => {
+        if(notifBox) notifBox.style.display = 'none';
+    };
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function handleRequest(requestId, action) {
+    fetch(`/handle-request/${requestId}/${action}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken(),
+        }
+    })
+    .then(res => {
+        console.log("STATUS:", res.status);
+        return res.text(); // 👈 بدل json مؤقتًا
+    })
+    .then(data => {
+        console.log("RESPONSE:", data);
+        location.reload();
+    })
+    .catch(err => console.error("ERROR:", err));
+}
+</script>
+</body>
+</html>
