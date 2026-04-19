@@ -16,27 +16,23 @@ def index(request):
         email_input = request.POST.get("email")
         password_input = request.POST.get("password")
 
-        # التحقق من الداتا بيس مباشرة (PostgreSQL)
         user = authenticate(request, username=email_input, password=password_input)
 
         if user is not None:
             login(request, user)
             
-            # تخزين البيانات في السيشن عشان بقية الفانكشنز عندك بتعتمد عليها
             request.session['user_email'] = user.email
             request.session['user_name'] = user.first_name
 
-            # التوجيه حسب المجموعة (Group)
-            if user.groups.filter(name='Supervisors').exists():
-                return redirect('supervisor_dashboard') # تأكدي من الاسم في urls.py
+            # التوجيه حسب الإيميل
+            if email_input.endswith('@just.edu.jo') and not email_input.endswith('@cit.just.edu.jo'):
+                return redirect('supervisor_dashboard')
             else:
                 return redirect('student_dashboard')
         else:
-            # إذا البيانات غلط
             return render(request, "index.html", {"error_msg": "الايميل أو كلمة المرور غير صحيحة!"})
             
     return render(request, "index.html")
-
 # 3. لوحة التحكم (Dashboard)
 # views.py
 # 3. لوحة التحكم (Dashboard)
