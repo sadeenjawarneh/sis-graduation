@@ -260,3 +260,19 @@ def approve_request(request, request_id):
     Membership.objects.filter(user=student, role='Pending').delete()
     
     return JsonResponse({'status': 'success'})
+
+def supervisor_dashboard(request):
+    user_email = request.session.get('user_email')
+    if not user_email:
+        return redirect('index')
+    
+    user = get_object_or_404(User, username=user_email)
+    
+    if not user.groups.filter(name='Supervisors').exists():
+        return redirect('index')
+    
+    teams = Team.objects.all()
+    
+    return render(request, 'supervisor_dashboard.html', {
+        'teams': teams,
+    })
