@@ -8,7 +8,7 @@ urlpatterns = [
     
     path("", views.index, name="index"), 
     path("student_dashboard/", views.student_dashboard, name="student_dashboard"),
-    
+    path("supervisor_dashboard/", views.supervisor_dashboard, name="supervisor_dashboard"),
     # السطر اللي ناقصك هو هاد:
     path("team/<int:team_id>/", views.team_page, name="team_page"), 
     
