@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Supervisor Dashboard</title>
+
+    <!-- Link to Google Fonts for styling the font (Inter font family) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&swap" rel="stylesheet" />
+    
+    <!-- Font Awesome for using icons in the inputs and buttons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        /* Global styling for the entire page */
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Inter', sans-serif; /* Using 'Inter' font family */
+        }
+
+        body {
+            display: flex; 
+            background: #f4f6fb; /* Background color for the page */
+        }
+
+        /* Sidebar styling */
+        .sidebar { 
+            width: 260px; 
+            background: linear-gradient(180deg, #1e3c72, #2a5298); /* Gradient background for sidebar */
+            color: #fff; 
+            min-height: 100vh; 
+            padding: 30px 20px; 
+        }
+
+        /* Profile section styling inside the sidebar */
+        .profile { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-bottom: 40px; 
+            cursor: pointer; 
+            position: relative; 
+        }
+        .profile img { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 50%; /* Circular profile image */
+            object-fit: cover; 
+            border: 2px solid rgba(255,255,255,0.2); 
+        }
+        .profile:hover img { 
+            opacity: 0.8; /* Slight opacity change on hover */
+        }
+        .profile h3 { 
+            font-size: 15px; 
+            font-weight: 600; 
+            text-transform: capitalize; 
+        }
+        .profile span { 
+            font-size: 12px; 
+            opacity: 0.8; 
+        }
+
+        /* Menu styling inside the sidebar */
+        .menu { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
+        .menu a { 
+            color: #fff; 
+            text-decoration: none; 
+            padding: 12px 15px; 
+            border-radius: 8px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: 14px; 
+            opacity: 0.85; 
+            cursor: pointer; 
+        }
+
+        /* Menu item active or hover state */
+        .menu a.active, .menu a:hover { 
+            background: rgba(255, 255, 255, 0.15); 
+            opacity: 1; 
+        }
+
+        /* Main content styling */
+        .main { 
+            flex: 1; 
+            padding: 30px 40px; 
+        }
+
+        .topbar { 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 20px; 
+            margin-bottom: 25px; 
+            position: relative; 
+        }
+
+        /* Notification icon styling */
+        .icon { 
+            position: relative; 
+            cursor: pointer; 
+        }
+        .icon i { 
+            font-size: 18px; 
+            color: #475569; 
+        }
+        .badge { 
+            position: absolute; 
+            top: -6px; 
+            right: -6px; 
+            background: #ef4444; 
+            color: white; 
+            font-size: 10px; 
+            padding: 2px 6px; 
+            border-radius: 10px; 
+        }
+
+        /* Notification dropdown styling */
+        .notif-dropdown {
+            position: absolute; 
+            top: 35px; 
+            right: 0; 
+            width: 250px; 
+            background: white;
+            border-radius: 10px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            display: none; 
+            z-index: 1000; 
+            border: 1px solid #eee;
+        }
+        .notif-item { 
+            padding: 12px 15px; 
+            font-size: 13px; 
+            color: #475569; 
+            border-bottom: 1px solid #f0f0f0; 
+        }
+        .notif-item:last-child { 
+            border-bottom: none; 
+        }
+
+        /* Card layout for main content */
+        .card { 
+            background: #fff; 
+            border-radius: 14px; 
+            padding: 20px 25px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .card-left { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+        }
+        .card-left i { 
+            font-size: 22px; 
+            color: #2563eb; 
+            background: #e0e7ff; 
+            padding: 12px; 
+            border-radius: 10px; 
+        }
+        .card h3 { 
+            font-size: 16px; 
+            font-weight: 600; 
+        }
+        .card p { 
+            font-size: 13px; 
+            color: #64748b; 
+        }
+
+        /* Button styling for cards */
+        .btn { 
+            background: #2563eb; 
+            color: #fff; 
+            border: none; 
+            padding: 10px 18px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 13px; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+        }
+
+        /* Team card layout */
+        .team-card { 
+            background: #fff; 
+            border-radius: 14px; 
+            padding: 20px 25px; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); 
+        }
+        .team-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .team-info { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 6px; 
+        }
+        .team-info h4 { 
+            font-size: 16px; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        .team-info h4 i { 
+            color: #2563eb; 
+        }
+        .team-info span { 
+            font-size: 13px; 
+            color: #64748b; 
+        }
+
+        /* Progress bar styling */
+        .progress { 
+            background: #e5e7eb; 
+            border-radius: 20px; 
+            height: 10px; 
+            margin: 15px 0; 
+            overflow: hidden; 
+            width: 50%; 
+        }
+        .progress-bar { 
+            width: 15%; 
+            background: #22c55e; 
+            height: 100%; 
+        }
+
+        /* Footer styling for the team */
+        .team-footer { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start; 
+            font-size: 13px; 
+            color: #64748b; 
+            gap: 4px; 
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar section -->
+    <aside class="sidebar">
+        <div class="profile" onclick="document.getElementById('imageInput').click()">
+            <img id="supAvatar" src="https://ui-avatars.com/api/?name=User&background=ffffff&color=1e3c72" />
+            <div>
+                <h3 id="supName">Dr. Name</h3>
+                <span>Supervisor</span>
+            </div>
+            <!-- File input to upload profile image -->
+            <input type="file" id="imageInput" hidden accept="image/*">
+        </div>
+
+        <!-- Sidebar menu items -->
+        <nav class="menu">
+            <a class="active" data-action="dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a data-action="student-requests"><i class="fas fa-user-graduate"></i> Student Requests</a>
+            <a data-action="my-teams"><i class="fas fa-users"></i> My Teams</a>
+            <a data-action="schedule-discussions"><i class="fas fa-calendar"></i> Schedule Discussions</a>
+            <a data-action="grading-reports"><i class="fas fa-file-alt"></i> Grading & Reports</a>
+            <!-- Logout option -->
+            <a id="logoutLink" style="color: #ff8a80; cursor: pointer;">
+    <i class="fas fa-sign-out-alt"></i> Logout
+</a>
+        </nav>
+    </aside>
+
+    <!-- Main content section -->
+    <main class="main">
+        <div class="topbar">
+            <!-- Notification icon -->
+            <div class="icon" id="notifBtn">
+                <i class="far fa-bell"></i>
+                <span class="badge" id="notifBadge">1</span>
+                <div class="notif-dropdown" id="notifBox">
+                    <div class="notif-item">
+                        <i class="fas fa-user-check" style="color: #2563eb;"></i>
+                        New login detected for <b id="notifUserName">User</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question icon -->
+            <div class="icon" id="helpBtn"><i class="far fa-question-circle"></i></div>
+        </div>
+
+        <!-- Card for team requests -->
+        <div class="card">
+            <div class="card-left">
+                <i class="fas fa-bell"></i>
+                <div>
+                    <h3>New Team Requests</h3>
+                    <p>Review Team requests from waiting teams.</p>
+                </div>
+            </div>
+            <button class="btn" id="viewRequestsBtn">View Requests <i class="fas fa-arrow-right"></i></button>
+        </div>
+
+        <!-- Card for team details -->
+        <div class="team-card">
+            <div class="team-header">
+                <div class="team-info">
+                    <h4><i class="fas fa-users"></i> View Team</h4>
+                    <span>Members · AI Project</span>
+                </div>
+                <button class="btn" id="viewTeamsBtn">View Teams</button>
+            </div>
+            <div class="progress"><div class="progress-bar"></div></div>
+            <div class="team-footer">
+                <span>% completed</span> 
+                <span><i class="far fa-calendar"></i> Next Meeting:</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // JavaScript code for loading user data and profile image
+        window.onload = function() {
+            const savedName = localStorage.getItem('userDisplayName') || 'Supervisor';
+            document.getElementById('supName').innerText = "Dr. " + savedName;
+            document.getElementById('notifUserName').innerText = savedName; // Display user's name in notification
+
+            const savedImg = localStorage.getItem('profileImg_' + savedName);
+            if (savedImg) {
+                document.getElementById('supAvatar').src = savedImg; // Set profile image if available
+            } else {
+                document.getElementById('supAvatar').src = `https://ui-avatars.com/api/?name=${savedName}&background=ffffff&color=1e3c72`;
+            }
+        };
+
+        // Notification dropdown behavior
+        const notifBtn = document.getElementById('notifBtn');
+        const notifBox = document.getElementById('notifBox');
+        const notifBadge = document.getElementById('notifBadge');
+        const helpBtn = document.getElementById('helpBtn');
+        const viewRequestsBtn = document.getElementById('viewRequestsBtn');
+        const viewTeamsBtn = document.getElementById('viewTeamsBtn');
+
+        const routes = {
+            'dashboard': 'Supervisor_dashboard.html',
+            'student-requests': 'supervisor_student_requests.html',
+            'my-teams': 'supervisor_my_teams.html',
+            'schedule-discussions': 'supervisor_schedule_discussions.html',
+            'grading-reports': 'supervisor_grading_reports.html'
+        };
+
+        notifBtn.onclick = (e) => {
+            e.stopPropagation();
+            const isOpen = notifBox.style.display === 'block';
+            notifBox.style.display = isOpen ? 'none' : 'block';
+            if (!isOpen) {
+                notifBadge.style.display = 'none'; // Hide badge when dropdown is opened
+            }
+        };
+
+        // Close notification box if clicked outside
+        window.onclick = () => { notifBox.style.display = 'none'; };
+
+       // Activate sidebar buttons
+document.querySelectorAll('.menu a').forEach((item) => {
+    item.addEventListener('click', (e) => {
+        
+        if (item.id === 'logoutLink' || item.innerText.includes('Logout')) {
+            localStorage.clear();
+            window.location.href = 'login.html';
+            return; 
+        }
+
+       
+        const action = item.dataset.action;
+        if (action && routes[action]) {
+            window.location.href = routes[action];
+        }
+    });
+});
+      // 
+document.addEventListener('DOMContentLoaded', () => {
+
+    // 1.
+    const logoutBtn = document.getElementById('logoutLink');
+    if (logoutBtn) {
+        logoutBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation(); 
+            
+            console.log("Logout triggered"); 
+            
+            localStorage.clear();
+            window.location.replace('login.html'); 
+        };
+    }
+
+    // 2. 
+    document.querySelectorAll('.menu a[data-action]').forEach((item) => {
+        item.addEventListener('click', function(e) {
+            const action = this.dataset.action;
+            if (routes[action]) {
+                window.location.href = routes[action];
+            }
+        });
+    });
+
+    // 3.  (View Requests & View Teams)
+    if (document.getElementById('viewRequestsBtn')) {
+        document.getElementById('viewRequestsBtn').onclick = () => window.location.href = routes['student-requests'];
+    }
+    if (document.getElementById('viewTeamsBtn')) {
+        document.getElementById('viewTeamsBtn').onclick = () => window.location.href = routes['my-teams'];
+    }
+});
+
+
+
+        // Handle profile image upload
+        document.getElementById('imageInput').onchange = function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64Image = event.target.result;
+                    const currentName = localStorage.getItem('userDisplayName');
+                    localStorage.setItem('profileImg_' + currentName, base64Image); // Store image in localStorage
+                    document.getElementById('supAvatar').src = base64Image; // Update profile image
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    </script>
+</body>
+
+</html>
