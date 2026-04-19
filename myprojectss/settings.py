@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-temporary-key-for-local-use")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -81,19 +81,9 @@ WSGI_APPLICATION = 'myprojectss.wsgi.application'
 
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-if os.environ.get("DATABASE_URL") and not os.environ.get("DATABASE_URL").startswith("b'"):
-    DATABASES = {
-        'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+DATABASES = {
+    'default': dj_database_url.parse('postgresql://graduation_db_till_user:JL9eMZcXlzZTl9Ft6OCcPLikwes3htqQ@dpg-d7iia5vlk1mc739ul97g-a.ohio-postgres.render.com/graduation_db_till')
+}
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
