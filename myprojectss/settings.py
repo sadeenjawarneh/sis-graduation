@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import os
+import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,17 +21,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-)(2%fxja8x*ei1%yg+s$r+8ee2&fno$zq!vln69n-i^#qr2f0z'
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = [
     "sis-graduation.onrender.com",
+    ".onrender.com",
     "localhost",
     "127.0.0.1"
 ]
-
 
 # Application definition
 
@@ -78,16 +80,10 @@ WSGI_APPLICATION = 'myprojectss.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'graduation_db',      # اسم القاعدة اللي أنشأتيها في pgAdmin
-        'USER': 'postgres',           # اسم المستخدم الافتراضي
-        'PASSWORD': '2004',  # اكتبي هنا الباسورد اللي حطيتيه وقت التثبيت (مثلاً admin)
-        'HOST': '127.0.0.1',          # يعني الجهاز الحالي
-        'PORT': '5432',               # المنفذ الافتراضي لـ Postgres
-    }
+    'default': dj_database_url.parse(
+        os.environ.get("DATABASE_URL")
+    )
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
 
@@ -123,4 +119,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
