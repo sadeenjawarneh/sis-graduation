@@ -37,37 +37,41 @@ def index(request):
 # views.py
 # 3. لوحة التحكم (Dashboard)
 def student_dashboard(request):
-    # بدل الاعتماد على request.user مباشرة، نجلب الإيميل من السيشن
+    # 1. جلب الإيميل من السيشن
     user_email = request.session.get('user_email')
     
     if not user_email:
-        return redirect('index') # إذا مش مسجل دخول يرجعه للبداية
+        return redirect('index') 
 
-    # نجلب كائن المستخدم الحقيقي
+    # 2. جلب كائن المستخدم
     current_user = get_object_or_404(User, username=user_email)
 
-    # نستخدم current_user في الفلتر
-    user_membership = Membership.objects.filter(user=current_user).exclude(role='Pending').first()
+    # 3. البحث عن فريق (فقط القادة والأعضاء، نستثني الـ Pending)
+    user_membership = Membership.objects.filter(
+        user=current_user
+    ).exclude(role='Pending').first()
     
-    pending_requests = []
-    user_has_team = False
-    team = None
-
     if user_membership:
-        user_has_team = True
+        # الحالة الأولى: الطالب لديه فريق (Leader أو Member)
         team = user_membership.team
+        # نجلب الطلبات المعلقة لهذا الفريق (فقط إذا كان الطالب هو القائد)
         pending_requests = Membership.objects.filter(team=team, role='Pending')
-
-    context = {
-        'user_has_team': user_has_team,
-        'team': team,
-        'pending_requests': pending_requests,
-    }
-    return render(request, 'student_dashboard.html', context)
-
-
+        
+        context = {
+            'team': team,
+            'membership': user_membership,
+            'pending_requests': pending_requests,
+        }
+        # هنا نوجه لصفحة الفريق "team_dashboard.html"
+        return render(request, 'team_page.html', context)
+    
+    else:
+        # الحالة الثانية: الطالب "حر" (ليس لديه فريق أو طلبه لا يزال Pending)
+        # هنا نوجه لصفحة (إنشاء أو انضمام) "student_dashboard.html"
+        return render(request, 'student_dashboard.html')
 # 4. إنشاء فريق جديد
 def create_team(request):
+    
     user_email = request.session.get('user_email')
     if not user_email: return redirect('index')
     user = get_object_or_404(User, username=user_email)
@@ -82,7 +86,7 @@ def create_team(request):
             leader=user
         )
         Membership.objects.create(user=user, team=team, role='Leader')
-        return redirect('student_dashboard')
+        return redirect('team_page')
     return render(request, 'create_team.html')
 
 # 5. البحث عن فريق
@@ -119,21 +123,28 @@ def send_join_request(request, team_id):
     return redirect('join_team')
 
 # 7. Workspace
-def team_page(request, team_id):
+def team_page(request):
     user_email = request.session.get('user_email')
-    if not user_email: return redirect('index')
+    if not user_email:
+        return redirect('index')
     
     user = get_object_or_404(User, username=user_email)
-    team = get_object_or_404(Team, id=team_id)
     
-    membership = Membership.objects.filter(user=user, team=team, role__in=['Leader', 'Member']).first()
+    membership = Membership.objects.filter(
+        user=user,                  # ← هاد الصح
+        role__in=['Leader', 'Member']
+    ).select_related('team').first()
+    
     if not membership:
         return redirect('student_dashboard')
-
-    pending_requests = team.memberships.filter(role='Pending')
-
+    
+    pending_requests = Membership.objects.filter(
+        team=membership.team,
+        role='Pending'
+    )
+    
     return render(request, 'team_page.html', {
-        'team': team,
+        'team': membership.team,
         'membership': membership,
         'pending_requests': pending_requests,
     })
@@ -272,3 +283,20 @@ def supervisor_dashboard(request):
     return render(request, 'supervisor_dashboard.html', {
         'teams': teams,
     })
+
+def dashboard_router(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # تحقق إذا اليوزر عنده تيم (عضو أو ليدر)
+    membership = Membership.objects.filter(
+        user=request.user,
+        role__in=['Leader', 'Member']
+    ).select_related('team').first()
+    
+    if membership:
+        # عنده تيم — روّحه على team_page
+        return redirect('team_page')  # أو render مباشرة
+    else:
+        # ما عنده تيم — student_dashboard
+        return render(request, 'student_dashboard.html')

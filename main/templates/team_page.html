@@ -1,612 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>{{ team.name }} | Team Workspace</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        :root {
-            --brand-primary: #1a237e;
-            --brand-secondary: #3949ab;
-            --bg-body: #f3f4f7;
-        }
+<meta charset="UTF-8">
+<title>Team Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-body);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-        /* ─── Sidebar ─────────────────────────────── */
-        .members-sidebar {
-            width: 320px;
-            background: white;
-            border-right: 1px solid #e0e4e9;
-            display: flex;
-            flex-direction: column;
-            padding: 25px;
-            overflow-y: auto;
-        }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Inter;
+}
 
-        .member-status-card {
-            background: #f8fafc;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border: 1px solid #edf2f7;
-            position: relative;
-        }
+body{
+    display:flex;
+    background:#f4f6fb;
+    color:#0f172a;
+}
 
-        .avatar-wrapper {
-            position: relative;
-        }
+/* ================= SIDEBAR ================= */
+.sidebar{
+    width:250px;
+    min-height:100vh;
+    background:linear-gradient(180deg,#1e3c72,#2a5298);
+    color:#fff;
+    padding:20px;
+}
 
-        .avatar-wrapper img {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
+.sidebar h2{
+    font-size:18px;
+    margin-bottom:20px;
+}
 
-        .online-dot {
-            width: 12px;
-            height: 12px;
-            background: #22c55e;
-            border-radius: 50%;
-            border: 2px solid white;
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-        }
+.sidebar a{
+    display:block;
+    color:#fff;
+    text-decoration:none;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:8px;
+    font-size:13px;
+    opacity:.9;
+}
 
-        .role-tag {
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            background: #e0e7ff;
-            color: #4338ca;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
+.sidebar a:hover{
+    background:rgba(255,255,255,0.15);
+}
 
-        .leader-crown {
-            position: absolute;
-            top: -10px;
-            left: -5px;
-            color: #f59e0b;
-            font-size: 18px;
-            transform: rotate(-20deg);
-        }
+/* ================= MAIN ================= */
+.main{
+    flex:1;
+    padding:25px;
+}
 
-        .pending-section {
-            margin-top: 20px;
-            background: #fff5f5;
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px dashed #feb2b2;
-        }
+.header h1{
+    color:#1a237e;
+    margin-bottom:5px;
+}
 
-        .pending-card {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
+.sub{
+    color:#64748b;
+    font-size:13px;
+    margin-bottom:20px;
+}
 
-        .action-btn {
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 1.1rem;
-            transition: 0.2s;
-        }
+/* ================= STATS ================= */
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+    margin-bottom:20px;
+}
 
-        .approve-btn {
-            color: #22c55e;
-        }
+.stat-card{
+    background:#fff;
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+}
 
-        .reject-btn {
-            color: #ef4444;
-        }
+.stat-card h3{
+    font-size:13px;
+    color:#64748b;
+}
 
-        /* ─── Main workspace ──────────────────────── */
-        .workspace-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #f8fafc;
-            overflow: hidden;
-        }
+.stat-card p{
+    font-size:20px;
+    font-weight:700;
+    margin-top:5px;
+    color:#1a237e;
+}
 
-        /* ─── NEW: Team Hero Header ───────────────── */
-        .team-hero-wrapper {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 0;
-        }
+/* ================= CARDS ================= */
+.card{
+    background:#fff;
+    padding:15px;
+    border-radius:12px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.05);
+    margin-bottom:15px;
+}
 
-        .team-hero {
-            position: relative;
-            overflow: hidden;
-        }
+.badge{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+}
 
-        .hero-accent-bar {
-            height: 3px;
-            background: linear-gradient(90deg, #1a237e 0%, #3949ab 50%, #7c83d8 100%);
-        }
+.pending{background:#fff3cd;color:#856404;}
+.active{background:#d1fae5;color:#065f46;}
+.full{background:#fee2e2;color:#991b1b;}
 
-        .hero-body {
-            padding: 20px 30px 16px;
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
+/* ================= MEMBER ================= */
+.member{
+    display:flex;
+    justify-content:space-between;
+    padding:10px;
+    border-bottom:1px solid #eee;
+    font-size:14px;
+}
 
-        .team-monogram {
-            width: 54px;
-            height: 54px;
-            border-radius: 12px;
-            background: #1a237e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: 600;
-            color: #c8cef8;
-            flex-shrink: 0;
-            letter-spacing: -1px;
-        }
+.btn{
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    font-size:12px;
+    cursor:pointer;
+}
 
-        .team-meta {
-            flex: 1;
-            min-width: 0;
-        }
+.green{background:#22c55e;color:#fff;}
+.red{background:#ef4444;color:#fff;}
 
-        .team-eyebrow {
-            font-size: 10px;
-            font-weight: 600;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 1.3px;
-            margin-bottom: 4px;
-        }
-
-        .team-hero-name {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--brand-primary);
-            margin: 0 0 6px;
-            line-height: 1.2;
-        }
-
-        .team-hero-desc {
-            font-size: 0.85rem;
-            color: #64748b;
-            line-height: 1.55;
-            margin: 0;
-            max-width: 560px;
-        }
-
-        .hero-meta-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
-
-        .meta-chip {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 11px;
-            font-weight: 500;
-            color: #64748b;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 4px 11px;
-        }
-
-        .meta-chip .chip-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .chip-dot.green {
-            background: #22c55e;
-        }
-
-        .chip-dot.purple {
-            background: #7c83d8;
-        }
-
-        .member-stack {
-            display: flex;
-            align-items: center;
-        }
-
-        .member-stack-avatar {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            border: 2px solid white;
-            margin-left: -7px;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-
-        .member-stack-avatar:first-child {
-            margin-left: 0;
-        }
-
-        .member-stack-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .hero-divider {
-            height: 1px;
-            background: #f1f5f9;
-            margin: 0 30px;
-        }
-
-        .hero-footer {
-            padding: 12px 30px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .hero-stats {
-            display: flex;
-            gap: 24px;
-        }
-
-        .hero-stat-val {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--brand-primary);
-            line-height: 1;
-        }
-
-        .hero-stat-lbl {
-            font-size: 10px;
-            color: #94a3b8;
-            margin-top: 2px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-
-        /* ─── Chat area ───────────────────────────── */
-        .chat-container {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            background-image: radial-gradient(#d1d5db 0.5px, transparent 0.5px);
-            background-size: 20px 20px;
-        }
-
-        .message {
-            max-width: 70%;
-            margin-bottom: 15px;
-            padding: 12px 18px;
-            border-radius: 18px;
-            font-size: 0.95rem;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        .msg-received {
-            background: white;
-            align-self: flex-start;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            border-bottom-left-radius: 2px;
-        }
-
-        .msg-sent {
-            background: var(--brand-primary);
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-
-        /* ─── Input bar ───────────────────────────── */
-        .chat-input-bar {
-            background: white;
-            padding: 15px 30px;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .input-wrapper {
-            flex: 1;
-            background: #f1f5f9;
-            border-radius: 30px;
-            padding: 5px 20px;
-            display: flex;
-            align-items: center;
-        }
-
-        .input-wrapper input {
-            border: none;
-            background: transparent;
-            flex: 1;
-            padding: 10px;
-            outline: none;
-        }
-
-        .send-btn {
-            background: var(--brand-primary);
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            cursor: pointer;
-        }
-
-        /* ─── Supervisor bar ──────────────────────── */
-        .supervisor-section {
-            padding: 15px 30px;
-            background: #fdfdfd;
-            border-top: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn-supervisor {
-            background: #2e7d32;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: 0.3s;
-        }
-    </style>
+.flex{
+    display:flex;
+    gap:10px;
+}
+</style>
 </head>
 
 <body>
 
-    <!-- ══════════════════════════════════════════════
-         SIDEBAR
-    ══════════════════════════════════════════════ -->
-    <aside class="members-sidebar">
-        <h2 style="font-size: 1.1rem; margin-bottom: 20px; color: var(--brand-primary);">
-            <i class="fas fa-users"></i> Team Squad ({{ team.member_count }}/5)
-        </h2>
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <h2><i class="fa-solid fa-users"></i> Team Panel</h2>
+    <a href="{% url 'student_dashboard' %}">Dashboard</a>
+    <a href="#">Chat</a>
+    <a href="#">Files</a>
+    <a href="#">Meetings</a>
+</div>
 
-        <div class="members-list">
-            {% for m in team.memberships.all %}
-            {% if m.role != 'Pending' %}
-            <div class="member-status-card">
-                {% if m.role == 'Leader' %}<i class="fas fa-crown leader-crown"></i>{% endif %}
-                <div class="avatar-wrapper">
-                    <img src="https://ui-avatars.com/api/?name={{ m.user.username }}&background=random" alt="User">
-                    <div class="online-dot"></div>
-                </div>
-                <div>
-                    <div style="font-weight: 700; font-size: 0.85rem;">{{ m.user.username }}</div>
-                    <span class="role-tag">{{ m.role }}</span>
-                </div>
-            </div>
-            {% endif %}
-            {% endfor %}
+<!-- MAIN -->
+<div class="main">
+
+<div class="header">
+    <h1>{{ team.name }}</h1>
+    <p class="sub">Manage your team, members, and requests</p>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+    <div class="stat-card">
+        <h3>Members</h3>
+        <p>{{ team.member_count }}</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Requests</h3>
+        <p>{{ pending_requests.count }}</p>
+    </div>
+
+    <div class="stat-card">
+        <h3>Status</h3>
+        <p>{{ team.status }}</p>
+    </div>
+</div>
+
+<!-- TEAM STATUS -->
+<div class="card">
+    <h3>Team Status</h3>
+    {% if team.status == 'Active' %}
+        <span class="badge active">ACTIVE</span>
+    {% elif team.status == 'Locked' %}
+        <span class="badge full">LOCKED</span>
+    {% else %}
+        <span class="badge pending">PENDING</span>
+    {% endif %}
+</div>
+
+<!-- MEMBERS -->
+<div class="card">
+    <h3>Members</h3>
+    {% for m in team.memberships.all %}
+        {% if m.role == 'Leader' or m.role == 'Member' %}
+        <div class="member">
+            <span>{{ m.user.username }}</span>
+            {% if m.role == 'Leader' %}<b>Leader</b>{% endif %}
         </div>
+        {% endif %}
+    {% empty %}
+        <p style="color:#64748b">No members</p>
+    {% endfor %}
+</div>
 
-
-        <a href="{% url 'leave_team' %}"
-            style="margin-top: auto; color: #ef4444; text-decoration: none; font-size: 0.8rem; text-align: center; padding: 10px; border: 1px solid #fee2e2; border-radius: 8px; display: block;">
-            <i class="fas fa-sign-out-alt"></i> Leave Team
-        </a>
-    </aside>
-
-    <!-- ══════════════════════════════════════════════
-         MAIN WORKSPACE
-    ══════════════════════════════════════════════ -->
-    <main class="workspace-main">
-
-        <!-- ── NEW: Team Hero Header ── -->
-        <div class="team-hero-wrapper">
-            <div class="team-hero">
-                <div class="hero-accent-bar"></div>
-
-                <div class="hero-body">
-                    <!-- Monogram: first 2 letters of team name -->
-                    <div class="team-monogram">
-                        {{ team.name|slice:":2"|upper }}
-                    </div>
-
-                    <div class="team-meta">
-                        <div class="team-eyebrow">Your current team</div>
-                        <h2 class="team-hero-name">{{ team.name }}</h2>
-                        <p class="team-hero-desc">
-                            {% if team.description %}
-                            {{ team.description }}
-                            {% else %}
-                            No description yet — add one to let your team know what you're building together.
-                            {% endif %}
-                        </p>
-
-                        <div class="hero-meta-row">
-                            <!-- Online count chip -->
-                            <div class="meta-chip">
-                                <span class="chip-dot green"></span>
-                                {{ team.member_count }} online
-                            </div>
-
-                            <!-- Members count chip -->
-                            <div class="meta-chip">
-                                <span class="chip-dot purple"></span>
-                                {{ team.member_count }} / 5 members
-                            </div>
-
-                            <!-- Member avatar stack -->
-                            <div class="member-stack">
-                                {% for m in team.memberships.all %}
-                                {% if m.role != 'Pending' %}
-                                <div class="member-stack-avatar">
-                                    <img src="https://ui-avatars.com/api/?name={{ m.user.username }}&background=3949ab&color=c8cef8&size=26"
-                                        alt="{{ m.user.username }}">
-                                </div>
-                                {% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="hero-divider"></div>
-
-                <div class="hero-footer">
-                    <div class="hero-stats">
-                        <div>
-                            <div class="hero-stat-val">{{ team.member_count }}</div>
-                            <div class="hero-stat-lbl">Members</div>
-                        </div>
-                        <div>
-                            <div class="hero-stat-val">Active</div>
-                            <div class="hero-stat-lbl">Status</div>
-                        </div>
-                        <div>
-                            <div class="hero-stat-val"># {{ team.name }}</div>
-                            <div class="hero-stat-lbl">Channel</div>
-                        </div>
-                    </div>
-
-                    <a href="{% url 'request_supervisor' %}" class="btn-supervisor"
-                        style="font-size: 0.82rem; padding: 8px 16px; border-radius: 20px;">
-                        <i class="fas fa-user-tie"></i> Supervisor List
-                    </a>
-                </div>
+<!-- REQUESTS - تظهر للـ Leader فقط -->
+{% if membership.role == 'Leader' %}
+<div class="card">
+    <h3>Join Requests</h3>
+    {% if pending_requests %}
+        {% for req in pending_requests %}
+        <div class="member" id="req-{{ req.id }}">
+            <span>{{ req.user.username }}</span>
+            <div class="flex">
+                <button class="btn green" onclick="handleRequest({{ req.id }}, 'approve')">Accept</button>
+                <button class="btn red"   onclick="handleRequest({{ req.id }}, 'reject')">Reject</button>
             </div>
         </div>
-        <!-- ── END Team Hero Header ── -->
+        {% endfor %}
+    {% else %}
+        <p style="color:#64748b">No requests</p>
+    {% endif %}
+</div>
+{% endif %}
 
-        <!-- ── Chat messages ── -->
-        <div class="chat-container" id="chatContainer"></div>
+</div>
 
-        <!-- ── Input bar ── -->
-        <div class="chat-input-bar">
-            <input type="file" id="fileInput" style="display:none;" onchange="sendMessage()">
-            <button type="button" onclick="document.getElementById('fileInput').click()"
-                style="background:none; border:none; color:#64748b; font-size:1.2rem; cursor:pointer;">
-                <i class="fas fa-paperclip"></i>
-            </button>
+<script>
+function getCookie(name) {
+    let value = null;
+    document.cookie.split(';').forEach(c => {
+        c = c.trim();
+        if (c.startsWith(name + '=')) value = decodeURIComponent(c.slice(name.length + 1));
+    });
+    return value;
+}
 
-            <div class="input-wrapper">
-                <input type="text" id="messageInput" placeholder="Send a message to the team..."
-                    onkeypress="if(event.key === 'Enter') sendMessage()">
-            </div>
-
-            <button type="button" class="send-btn" onclick="sendMessage()">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
-
-        <!-- ── Supervisor bar ── -->
-        <div class="supervisor-section">
-            <div style="color: #64748b; font-size: 0.85rem;">
-                <i class="fas fa-info-circle"></i> Ready to coordinate!
-            </div>
-            <a href="{% url 'request_supervisor' %}" class="btn-supervisor">
-                <i class="fas fa-user-tie"></i> Supervisor List
-            </a>
-        </div>
-
-    </main>
-
-    <script>
-        function loadMessages() {
-            fetch("{% url 'get_messages' team.id %}")
-                .then(res => res.json())
-                .then(data => {
-                    const chatContainer = document.getElementById('chatContainer');
-                    chatContainer.innerHTML = '';
-                    data.messages.forEach(msg => {
-                        const msgDiv = document.createElement('div');
-                        msgDiv.className = `message ${msg.is_me ? 'msg-sent' : 'msg-received'}`;
-                        let content = `<strong>${msg.user}</strong><br>${msg.content || ''}`;
-                        if (msg.file_url) {
-                            content += `<br><a href="${msg.file_url}" target="_blank" style="color:inherit; font-size:12px;"><i class="fas fa-file"></i> View File</a>`;
-                        }
-                        msgDiv.innerHTML = content + `<br><small style="font-size:10px; opacity:0.7;">${msg.time}</small>`;
-                        chatContainer.appendChild(msgDiv);
-                    });
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                });
+function handleRequest(membershipId, action) {
+    fetch(`/handle-request/${membershipId}/${action}/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            document.getElementById('req-' + membershipId).remove();
+        } else {
+            alert('Something went wrong!');
         }
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const fileInput = document.getElementById('fileInput');
-            const formData = new FormData();
-            if (input.value.trim() === "" && fileInput.files.length === 0) return;
-            formData.append('content', input.value);
-            if (fileInput.files.length > 0) formData.append('file', fileInput.files[0]);
-            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-            fetch("{% url 'send_message' team.id %}", {
-                method: "POST",
-                body: formData
-            }).then(() => {
-                input.value = '';
-                fileInput.value = '';
-                loadMessages();
-            });
-        }
-        function handleRequest(requestId, action) {
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-            fetch(`/handle-request/${requestId}/${action}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'Content-Type': 'application/json'
-                }
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Request failed');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === 'success') {
-                        location.reload();
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-    </script>
+    })
+    .catch(() => alert('Network error!'));
+}
+</script>
 
 </body>
-
 </html>
