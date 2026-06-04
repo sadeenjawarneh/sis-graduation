@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Create Team</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a237e
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif
+        }
+
+        body {
+            background: #f4f7fc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh
+        }
+
+        .card {
+            background: #fff;
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, .1);
+            width: 100%;
+            max-width: 500px
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem
+        }
+
+        .header i {
+            font-size: 2rem;
+            color: var(--primary);
+            opacity: .5
+        }
+
+        .header h2 {
+            margin-top: .5rem;
+            color: #222
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px
+        }
+
+        .form-group {
+            margin-bottom: 1.4rem
+        }
+
+        label {
+            display: block;
+            margin-bottom: .5rem;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: .8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: .3s;
+            resize: vertical
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none
+        }
+
+        .error {
+            display: none;
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 1rem
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 1rem;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: .3s
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            background: #283593;
+            transform: translateY(-2px)
+        }
+
+        .btn-submit:disabled {
+            background: #aaa;
+            cursor: not-allowed
+        }
+
+        .back {
+            text-align: center;
+            margin-top: 1.2rem
+        }
+
+        .back a {
+            color: #666;
+            text-decoration: none;
+            font-size: 13px
+        }
+
+        .back a:hover {
+            color: var(--primary)
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="header">
+            <i class="fas fa-users-cog"></i>
+            <h2>Create New Project Team</h2>
+            <p>You will become the team leader</p>
+        </div>
+
+        <div class="error" id="errBox"></div>
+
+        <div class="form-group">
+            <label><i class="fas fa-tag"></i> Team Name</label>
+            <input type="text" id="teamName" placeholder="e.g. Smart City System">
+        </div>
+        <div class="form-group">
+            <label><i class="fas fa-align-left"></i> Project Description</label>
+            <textarea id="desc" rows="4" placeholder="Describe your project goal..."></textarea>
+        </div>
+
+        <button class="btn-submit" id="createBtn" onclick="doCreate()">
+            Create Team &amp; Go to Dashboard <i class="fas fa-arrow-right"></i>
+        </button>
+
+        <div class="back">
+            <a href="/student_dashboard.html"><i class="fas fa-chevron-left"></i> Cancel and back</a>
+        </div>
+    </div>
+
+    <script src="/static/api.js?v=2"></script>
+    <script>
+        Auth.requireRole('student');
+        // Already in a team?
+        Teams.myTeam().then(t => { if (t) location.href = '/team_dashboard.html'; });
+
+        async function doCreate() {
+            const name = document.getElementById('teamName').value.trim();
+            const desc = document.getElementById('desc').value.trim();
+            const btn = document.getElementById('createBtn');
+            const err = document.getElementById('errBox');
+            err.style.display = 'none';
+
+            if (!name) { err.textContent = 'Please enter a team name.'; err.style.display = 'block'; return; }
+            if (!desc) { err.textContent = 'Please enter a project description.'; err.style.display = 'block'; return; }
+
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating…';
+
+            try {
+                const team = await Teams.create(name, desc);
+
+                console.log("TEAM RESPONSE:", team);
+
+                if (team && Object.keys(team).length > 0) {
+                    location.href = '/team_dashboard.html';
+                } else {
+                    err.textContent = "Failed to create team";
+                    err.style.display = "block";
+                }
+            } catch (e) {
+                err.textContent = 'Something went wrong. Try again.';
+                err.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = 'Create Team & Go to Dashboard <i class="fas fa-arrow-right"></i>';
+            }
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Enter') doCreate(); });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Project Files</title>
+  <!-- Inter font for consistent typography across all supervisor pages -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Font Awesome for icons (file icon, refresh icon) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    /* Reset all default browser margins, padding, and box model for consistency */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+    /* Page heading style */
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+
+    /* Subtitle text below the page heading */
+    .page-sub { color: #64748b; font-size: 0.875rem; margin-bottom: 18px; }
+
+    /* Base flash/alert message box — hidden by default, shown via JS */
+    .flash { padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 13px; display: none; }
+
+    /* Green variant: shown on successful actions (delete, etc.) */
+    .flash-ok  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+
+    /* Red variant: shown when an API call or action fails */
+    .flash-err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+    /* Toolbar row holding the team filter dropdown and the refresh button */
+    .toolbar {
+      display: flex; align-items: flex-end; gap: 12px;
+      flex-wrap: wrap; margin-bottom: 16px;
+    }
+
+    /* Label above the team filter select */
+    .toolbar label { font-size: 13px; font-weight: 600; color: #0f172a; }
+
+    /* Team filter dropdown — populated dynamically from GPApi.teams() */
+    .toolbar select {
+      margin-top: 5px; border: 1px solid #cbd5e1; border-radius: 8px;
+      padding: 9px 10px; font-size: 14px; font-family: inherit;
+      min-width: 180px;
+    }
+    .toolbar select:focus { outline: none; border-color: #2563eb; }
+
+    /* Base button style shared by toolbar buttons */
+    .btn { border: 0; padding: 9px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
+
+    /* Light/neutral button used for the Refresh action */
+    .btn-light  { background: #e2e8f0; color: #1e293b; }
+    .btn-light:hover  { background: #cbd5e1; }
+
+    /* Red button — used for destructive actions like file deletion */
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+
+    /* White card container that wraps the files table */
+    .card {
+      background: #fff; border-radius: 14px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,.05);
+      overflow-x: auto; /* allows horizontal scroll on small screens */
+    }
+
+    /* Files table — full width, no cell spacing */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    /* Table header and data cell shared spacing and alignment */
+    th, td { padding: 12px 10px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+
+    /* Column header styling — uppercase, muted color */
+    th { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+
+    /* Remove bottom border on the last row so it doesn't double with the card edge */
+    tr:last-child td { border-bottom: none; }
+
+    /* Clickable file name link inside the File column */
+    td a { color: #2563eb; text-decoration: none; font-weight: 500; }
+    td a:hover { text-decoration: underline; }
+
+    /* Small red delete button shown at the end of each file row */
+    .btn-sm-danger {
+      border: 0; padding: 6px 10px; border-radius: 6px;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+      background: #fef2f2; color: #ef4444;
+    }
+    .btn-sm-danger:hover { background: #fee2e2; }
+
+    /* Centered placeholder text shown when no files exist or while loading */
+    .empty { color: #94a3b8; text-align: center; padding: 2rem; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar is injected here by supervisor-common.js (GPNav.mount) -->
+  <aside id="supervisor-sidebar"></aside>
+
+  <main class="main-content">
+    <h1>Project Files</h1>
+    <p class="page-sub">Files uploaded by students for your assigned teams — open or delete as needed.</p>
+
+    <!-- Flash message area: displays success or error feedback after user actions -->
+    <div id="msg" class="flash"></div>
+
+    <div class="toolbar">
+      <div>
+        <label for="filter-team">Filter by Team</label>
+        <select id="filter-team">
+          <option value="">All Teams</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-light" id="btn-reload">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+      <label style="cursor:pointer;background:#2563eb;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600">
+        <i class="fas fa-upload"></i> Upload File
+        <input type="file" id="upload-input" style="display:none" />
+      </label>
+    </div>
+
+    <div id="upload-msg" style="display:none;padding:8px 14px;border-radius:8px;font-size:13px;margin-bottom:12px"></div>
+
+    <!-- Card wrapping the files table; content is replaced by JS -->
+    <div class="card">
+      <div id="files-wrap"><p class="empty">Loading…</p></div>
+    </div>
+  </main>
+
+  <!-- Core API helper: provides GPApi.teams(), GPApi.files(), GPApi.deleteFile(), etc. -->
+  <script src="/static/api.js?v=2"></script>
+
+  <!-- Shared supervisor layout: builds the sidebar, enforces auth, exposes GPNav -->
+  <script src="/static/supervisor-common.js"></script>
+
+  <script>
+    // Mount the sidebar and mark "files" as the active nav link.
+    // GPNav.mount also runs the auth guard — redirects to /login.html if not a supervisor.
+    GPNav.mount('files');
+
+    /**
+     * flash(text, ok)
+     * Displays a temporary feedback message below the toolbar.
+     * @param {string} text - The message to display.
+     * @param {boolean} ok  - true → green success style, false → red error style.
+     */
+    function flash(text, ok) {
+      const m = document.getElementById('msg');
+      m.textContent = text;
+      m.className = 'flash ' + (ok ? 'flash-ok' : 'flash-err');
+      m.style.display = 'block';
+    }
+
+    /**
+     * esc(s)
+     * Escapes a string for safe HTML insertion to prevent XSS.
+     * Creates a temporary div, sets its textContent (auto-escaped),
+     * then returns the innerHTML as a safe HTML string.
+     * @param {string} s - Raw string that may contain HTML characters.
+     * @returns {string} HTML-safe string.
+     */
+    function esc(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    /**
+     * fillFilter()
+     * Fetches all teams assigned to this supervisor from the API
+     * and populates the "Filter by Team" dropdown with their names and IDs.
+     * Preserves the currently selected team after re-population (e.g. after a delete).
+     */
+    async function fillFilter() {
+      const sel = document.getElementById('filter-team'); // the <select> element
+      const cur = sel.value;                              // remember current selection before refill
+      const teams = await GPApi.teams();                  // fetch supervisor's assigned teams
+      sel.innerHTML =
+        '<option value="">All Teams</option>' +           // always keep an "All Teams" default
+        teams.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+      // Restore previous selection if it still exists in the new options list
+      if ([...sel.options].some((o) => o.value === cur)) sel.value = cur;
+    }
+
+    /**
+     * loadFiles()
+     * Fetches files from the API for the currently selected team (or all teams if none selected).
+     * Renders a table of files with team name, file link, uploader, description, date, and a delete button.
+     * Attaches click handlers to each delete button.
+     */
+    async function loadFiles() {
+      const w      = document.getElementById('files-wrap');       // container div for the table
+      const teamId = document.getElementById('filter-team').value; // selected team ID (empty = all)
+      w.innerHTML  = '<p class="empty">Loading…</p>';             // show loading placeholder
+
+      try {
+        // Fetch files — pass teamId to filter by team, or undefined to fetch all
+        const rows = await GPApi.files(teamId || undefined);
+
+        // Show an empty state message if no files are found
+        if (!rows.length) {
+          w.innerHTML = '<p class="empty">No files to display.</p>';
+          return;
+        }
+
+        // Build the files table with one row per file
+        w.innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>Team</th>       <!-- Team the file belongs to -->
+                <th>File</th>       <!-- Clickable file name linking to the file URL -->
+                <th>Uploader</th>   <!-- Name of the student who uploaded the file -->
+                <th>Description</th><!-- Optional description provided at upload time -->
+                <th>Date</th>       <!-- Upload date (first 10 chars of ISO timestamp) -->
+                <th></th>           <!-- Delete action column — no heading needed -->
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((r) => `
+                <tr>
+                  <!-- Team name or fallback to team ID if name is unavailable -->
+                  <td>${esc(r.team_name || String(r.team))}</td>
+
+                  <!-- File link — opens in a new tab; uses file_url from the API -->
+                  <td>
+                    <a href="${esc(r.file_url || '#')}" target="_blank" rel="noopener">
+                      <i class="fas fa-file" style="margin-right:5px;color:#64748b;"></i>${esc(r.file_name)}
+                    </a>
+                  </td>
+
+                  <!-- Display name of the student who uploaded this file -->
+                  <td>${esc(r.uploader_name)}</td>
+
+                  <!-- File description; show dash if none was provided -->
+                  <td>${esc(r.description || '—')}</td>
+
+                  <!-- Upload date formatted as YYYY-MM-DD -->
+                  <td style="color:#64748b;">${esc((r.created_at || '').slice(0, 10))}</td>
+
+                  <!-- Delete button — triggers deleteFile API call after confirmation -->
+                  <td>
+                    <button type="button" class="btn-sm-danger btn-del-file" data-id="${r.id}">Delete</button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+
+        // Attach a click handler to every Delete button in the rendered table
+        w.querySelectorAll('.btn-del-file').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            // Ask the user to confirm before permanently deleting the file
+            if (!confirm('Delete this file?')) return;
+            try {
+              // Call the API to delete the file by its ID
+              await GPApi.deleteFile(+btn.getAttribute('data-id'));
+              flash('Deleted successfully.', true); // show green success message
+              await loadFiles();                    // reload the table to reflect the deletion
+            } catch (e) {
+              flash(e.message, false); // show red error message if the API call fails
+            }
+          });
+        });
+
+      } catch (e) {
+        // If the API call itself fails, show the error inside the table area
+        w.innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+      }
+    }
+
+    // File upload
+    document.getElementById('upload-input').addEventListener('change', async function() {
+      const file = this.files[0];
+      if (!file) return;
+      const teamId = document.getElementById('filter-team').value;
+      if (!teamId) { flash('Please select a team first before uploading.', false); this.value = ''; return; }
+      const msgEl = document.getElementById('upload-msg');
+      msgEl.style.display = 'block';
+      msgEl.style.background = '#f0fdf4'; msgEl.style.color = '#166534';
+      msgEl.textContent = `Uploading "${file.name}"…`;
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('team_id', teamId);
+        const res = await GPApi.apiFetch('/files/', { method: 'POST', body: fd });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        msgEl.textContent = `"${file.name}" uploaded successfully!`;
+        this.value = '';
+        setTimeout(() => { msgEl.style.display = 'none'; }, 3000);
+        await loadFiles();
+      } catch(e) {
+        msgEl.style.background = '#fef2f2'; msgEl.style.color = '#991b1b';
+        msgEl.textContent = e.message || 'Upload failed';
+        this.value = '';
+      }
+    });
+
+    // Re-load the files table whenever the team filter dropdown selection changes
+    document.getElementById('filter-team').addEventListener('change', loadFiles);
+
+    // Refresh button: re-fetch both the team list (filter) and the files table
+    document.getElementById('btn-reload').addEventListener('click', async () => {
+      await fillFilter(); // update team options in case teams were added/removed
+      await loadFiles();  // reload files for the current (or newly selected) team
+    });
+
+    // On page load: populate the team filter dropdown, then load the initial files list
+    (async function () {
+      try {
+        await fillFilter(); // populate team dropdown first
+        await loadFiles();  // then load files (uses the default "All Teams" selection)
+      } catch (e) {
+        flash(e.message, false); // show error if initial load fails
+      }
+    })();
+  </script>
+</body>
+</html>

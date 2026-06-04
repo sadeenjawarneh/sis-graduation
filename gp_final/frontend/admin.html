@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GP Manager — Admin Panel</title>
+  <link rel="stylesheet" href="/static/admin.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="sidebar">
+
+    <div class="sidebar-logo">
+      <div class="logo-icon">🎓</div>
+      <div class="logo-text">
+        <span class="logo-title">GP Manager</span>
+        <span class="logo-sub">Admin Panel</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" onclick="showSection('dashboard', this)">
+        <span class="nav-icon">⊞</span> Dashboard
+      </a>
+      <a class="nav-item" onclick="showSection('teams', this)">
+        <span class="nav-icon">👥</span> Teams
+      </a>
+      <a class="nav-item" onclick="showSection('proposals', this)">
+        <span class="nav-icon">📁</span> Project Proposals
+      </a>
+      <a class="nav-item" onclick="showSection('supervisors', this)">
+        <span class="nav-icon">👨‍🏫</span> Supervisors
+      </a>
+      <a class="nav-item" onclick="showSection('students', this)">
+        <span class="nav-icon">🎓</span> Students
+      </a>
+      <a class="nav-item" onclick="showSection('defense', this)">
+        <span class="nav-icon">📅</span> Defense Schedule
+      </a>
+      <a class="nav-item" onclick="showSection('grades', this)">
+        <span class="nav-icon">📋</span> Grades
+      </a>
+      <a class="nav-item" onclick="showSection('activity', this)">
+        <span class="nav-icon">📊</span> Activity Log
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="notif-btn" onclick="alert('3 pending actions require your attention.')">
+        <span>🔔</span> Notifications
+        <span class="badge">3</span>
+      </button>
+      <button class="logout-btn" onclick="if(confirm('Logout?')) { localStorage.clear(); location.href='/login.html'; }">
+        <span>🚪</span> Log out
+      </button>
+      <div class="sidebar-profile">
+        <div class="profile-avatar">AD</div>
+        <div>
+          <div class="profile-name">Project Admin</div>
+          <div class="profile-role">Coordinator</div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <main class="main">
+
+    <!-- ===== DASHBOARD ===== -->
+    <section id="dashboard" class="section active">
+
+      <div class="welcome-banner">
+        <div class="welcome-text">
+          <h1>Welcome, Admin</h1>
+          <p>Graduation Project Management System — JUST University.<br>
+          Monitor and manage all teams, proposals, supervisors, and defense schedules.</p>
+        </div>
+        <div class="notif-box">
+          <span>🔔</span>
+          <div>
+            <strong>3 Pending Actions</strong>
+            <span>Require your attention</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Total Teams</span>
+            <span class="stat-icon blue">👥</span>
+          </div>
+          <div class="stat-value" id="dashboard-total-teams">12</div>
+          <div class="stat-sub">Active groups</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Students</span>
+            <span class="stat-icon purple">🎓</span>
+          </div>
+          <div class="stat-value" id="dashboard-total-students">48</div>
+          <div class="stat-sub">Enrolled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Supervisors</span>
+            <span class="stat-icon green">👨‍🏫</span>
+          </div>
+          <div class="stat-value" id="dashboard-total-supervisors">8</div>
+          <div class="stat-sub">Assigned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">Projects</span>
+            <span class="stat-icon amber">📁</span>
+          </div>
+          <div class="stat-value" id="dashboard-total-projects">12</div>
+          <div class="stat-sub">Ongoing</div>
+        </div>
+      </div>
+
+      <div class="status-row">
+        <div class="status-box green-box">
+          <span class="status-icon">✅</span>
+          <div>
+            <div class="status-num" id="dashboard-approved-proposals">7</div>
+            <div class="status-lbl">Approved Projects</div>
+          </div>
+        </div>
+        <div class="status-box amber-box">
+          <span class="status-icon">⏳</span>
+          <div>
+            <div class="status-num" id="dashboard-pending-proposals">3</div>
+            <div class="status-lbl">Pending Proposals</div>
+          </div>
+        </div>
+        <div class="status-box red-box">
+          <span class="status-icon">❌</span>
+          <div>
+            <div class="status-num" id="dashboard-rejected-proposals">2</div>
+            <div class="status-lbl">Rejected Proposals</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Pending Actions</h3>
+            <span class="badge red">4 items</span>
+          </div>
+          <ul class="pending-list">
+            <li><span class="dot red"></span>
+              <div><strong>Proposal Review</strong><br><small>AI Software Team</small></div>
+              <span class="arrow">↗</span>
+            </li>
+            <li><span class="dot amber"></span>
+              <div><strong>Team Change Request</strong><br><small>Cyber Security Team</small></div>
+              <span class="arrow">↗</span>
+            </li>
+            <li><span class="dot red"></span>
+              <div><strong>Supervisor Assignment</strong><br><small>IoT Smart Home</small></div>
+              <span class="arrow">↗</span>
+            </li>
+            <li><span class="dot green"></span>
+              <div><strong>Defense Date Approval</strong><br><small>Data Analytics</small></div>
+              <span class="arrow">↗</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Activity</h3>
+          </div>
+          <ul class="activity-list">
+            <li>
+              <div class="av-circle">A</div>
+              <div><p>Team Alpha uploaded final proposal</p><small>10 min ago</small></div>
+            </li>
+            <li>
+              <div class="av-circle">D</div>
+              <div><p>Dr. hammam approved Smart Health project</p><small>1 hour ago</small></div>
+            </li>
+            <li>
+              <div class="av-circle">S</div>
+              <div><p>Defense scheduled for Cyber Team</p><small>3 hours ago</small></div>
+            </li>
+            <li>
+              <div class="av-circle">M</div>
+              <div><p>Supervisor assigned to IoT Team</p><small>5 hours ago</small></div>
+            </li>
+            <li>
+              <div class="av-circle">N</div>
+              <div><p>New team formed: Data Analytics Group</p><small>Yesterday</small></div>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="card mt">
+        <div class="card-header">
+          <h3>📅 Upcoming Defense Sessions</h3>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Team / Project</th>
+              <th>Date</th>
+              <th>Supervisor</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="defense-sessions-body">
+            <tr><td colspan="4" style="text-align:center;padding:24px;color:#94a3b8;">No defense sessions scheduled.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ===== TEAMS ===== -->
+    <section id="teams" class="section">
+
+      <div class="page-header">
+        <div>
+          <h2>Teams Management</h2>
+          <p>View and manage all graduation project teams</p>
+        </div>
+        <button class="btn-primary" id="btn-open-add-team">+ Add Team</button>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="teams-search" placeholder="Search team, project, supervisor..." oninput="filterTeams()" />
+          </div>
+          <div class="tag-row">
+            <span class="tag gray">Total: <span id="teams-toolbar-total">0</span></span>
+            <span class="tag green">Approved: <span id="teams-toolbar-approved">0</span></span>
+            <span class="tag amber">Pending review: <span id="teams-toolbar-pending">0</span></span>
+          </div>
+        </div>
+
+        <table class="data-table" id="teams-table">
+          <thead>
+            <tr>
+              <th>Team Name</th>
+              <th>Team ID</th>
+              <th>Members</th>
+              <th>Project</th>
+              <th>Supervisor</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="teams-table-body">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ===== PROPOSALS ===== -->
+    <section id="proposals" class="section">
+
+      <div class="page-header">
+        <div>
+          <h2>Project Proposals</h2>
+          <p>Review and approve team project proposals</p>
+        </div>
+        <button class="btn-primary" id="btn-open-add-proposal">+ Add Proposal</button>
+      </div>
+
+      <div class="stats-grid three">
+        <div class="stat-card">
+          <div class="stat-icon amber">⏳</div>
+          <div class="stat-value" id="pending-count">3</div>
+          <div class="stat-sub">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">✅</div>
+          <div class="stat-value" id="approved-count">2</div>
+          <div class="stat-sub">Approved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">❌</div>
+          <div class="stat-value" id="rejected-count">1</div>
+          <div class="stat-sub">Rejected</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="proposals-search" placeholder="Search team or project..." oninput="filterProposals()" />
+          </div>
+          <div class="filter-btns">
+            <button class="filter-btn active" onclick="setProposalFilter('All', this)">All</button>
+            <button class="filter-btn" onclick="setProposalFilter('Pending', this)">Pending</button>
+            <button class="filter-btn" onclick="setProposalFilter('Approved', this)">Approved</button>
+            <button class="filter-btn" onclick="setProposalFilter('Rejected', this)">Rejected</button>
+          </div>
+        </div>
+
+        <table class="data-table" id="proposals-table">
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Project Title</th>
+              <th>Proposal File</th>
+              <th>Supervisor</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="proposals-body">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ===== SUPERVISORS ===== -->
+    <section id="supervisors" class="section">
+
+      <div class="page-header">
+        <div>
+          <h2>Supervisors</h2>
+          <p>Manage supervisor assignments for graduation project teams</p>
+        </div>
+        <button class="btn-primary" id="btn-open-add-supervisor">+ Add Supervisor</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="supervisors-total-count">0</div>
+          <div class="stat-sub">Total Supervisors</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="supervisors-assigned-count">0</div>
+          <div class="stat-sub">Assigned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="supervisors-available-count">0</div>
+          <div class="stat-sub">Available</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="supervisors-unassigned-teams-count">0</div>
+          <div class="stat-sub">Unassigned Teams</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="supervisors-search" placeholder="Search supervisor, department, or email..." oninput="filterSupervisors()" />
+          </div>
+        </div>
+
+        <div class="supervisor-grid" id="supervisor-grid">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===== STUDENTS ===== -->
+    <section id="students" class="section">
+
+      <div class="page-header">
+        <div>
+          <h2>Students</h2>
+          <p>View all enrolled students and their team assignments</p>
+        </div>
+        <button class="btn-primary" id="btn-open-add-student">+ Add Student</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="students-total-count">0</div>
+          <div class="stat-sub">Total Students</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="students-active-count">0</div>
+          <div class="stat-sub">Active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="students-pending-count">0</div>
+          <div class="stat-sub">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="students-teams-covered-count">0</div>
+          <div class="stat-sub">Teams Covered</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="students-search" placeholder="Search by name or student ID..." oninput="filterStudents()" />
+          </div>
+          <select id="students-team-filter" onchange="filterStudents()">
+            <option value="All">All Teams</option>
+          </select>
+        </div>
+
+        <table class="data-table" id="students-table">
+          <thead>
+            <tr>
+              <th>Student Name</th>
+              <th>ID</th>
+              <th>Team</th>
+              <th>Supervisor</th>
+              <th>Status</th>
+              <th>GPA</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="students-body">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ===== DEFENSE SCHEDULE ===== -->
+    <section id="defense" class="section">
+
+      <div class="page-header">
+        <div>
+          <h2>Defense Schedule</h2>
+          <p>Manage and track final defense sessions for all teams</p>
+        </div>
+        <button class="btn-primary" id="btn-open-schedule-defense">+ Schedule Defense</button>
+      </div>
+
+      <div class="stats-grid three">
+        <div class="stat-card green-box">
+          <div class="stat-value" id="defense-confirmed">0</div>
+          <div class="stat-sub">Confirmed</div>
+        </div>
+        <div class="stat-card amber-box">
+          <div class="stat-value" id="defense-pending">0</div>
+          <div class="stat-sub">Pending Confirmation</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="defense-not-scheduled">0</div>
+          <div class="stat-sub">Not Scheduled</div>
+        </div>
+      </div>
+
+      <div id="defense-list">
+        <!-- filled by JS -->
+      </div>
+
+    </section>
+
+    <!-- ===== GRADES ===== -->
+    <section id="grades" class="section">
+
+      <div class="page-header">
+        <div>
+          <h2>Grades</h2>
+          <p>Final grades for all graduation project teams</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="dashboard-total-graded">0</div>
+          <div class="stat-sub">Teams Graded</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="dashboard-pending-grades">0</div>
+          <div class="stat-sub">Pending Grading</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="dashboard-class-average">0%</div>
+          <div class="stat-sub">Class Average</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="dashboard-top-grade">0%</div>
+          <div class="stat-sub">Top Grade</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="grades-search" placeholder="Search grades..." oninput="renderGrades()" />
+          </div>
+          <div class="filter-btns">
+            <button class="filter-btn active" onclick="setGradeFilter('All', this)">All</button>
+            <button class="filter-btn" onclick="setGradeFilter('Draft', this)">Draft</button>
+            <button class="filter-btn" onclick="setGradeFilter('Submitted', this)">Submitted</button>
+            <button class="filter-btn" onclick="setGradeFilter('Approved', this)">Approved</button>
+            <button class="filter-btn" onclick="setGradeFilter('Rejected', this)">Rejected</button>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Project</th>
+              <th>Supervisor</th>
+              <th>Supervisor Grade</th>
+              <th>Committee 1 Grade</th>
+              <th>Committee 2 Grade</th>
+              <th>Final Grade</th>
+              <th>Letter Grade</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="grades-tbody">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+    <!-- ===== ACTIVITY LOG ===== -->
+    <section id="activity" class="section">
+
+      <div class="page-header">
+        <div>
+          <h2>Activity Log</h2>
+          <p>Track all actions and events across the system</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="activity-search" placeholder="Search activity..." oninput="filterActivity()" />
+          </div>
+          <div class="filter-btns">
+            <button class="filter-btn active" onclick="setActivityFilter('All', this)">All</button>
+            <button class="filter-btn" onclick="setActivityFilter('upload', this)">Upload</button>
+            <button class="filter-btn" onclick="setActivityFilter('approve', this)">Approved</button>
+            <button class="filter-btn" onclick="setActivityFilter('reject', this)">Rejected</button>
+            <button class="filter-btn" onclick="setActivityFilter('assign', this)">Assignment</button>
+            <button class="filter-btn" onclick="setActivityFilter('schedule', this)">Scheduled</button>
+            <button class="filter-btn" onclick="setActivityFilter('grade', this)">Graded</button>
+          </div>
+        </div>
+        <div id="activity-list">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <div class="modal-overlay" id="add-team-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add Team</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="add-team-modal">✕</button>
+      </div>
+      <form id="add-team-form" class="modal-form">
+        <div class="modal-error" id="add-team-error"></div>
+        <label>Team Name</label>
+        <input type="text" name="name" required placeholder="e.g. AI Software Team" />
+        <label>Project Title</label>
+        <input type="text" name="project_title" required placeholder="e.g. AI Medical Diagnosis System" />
+        <label>Assign Supervisor</label>
+        <select name="supervisor_id" id="add-team-supervisor-select">
+          <option value="">— None —</option>
+        </select>
+        <label>Status</label>
+        <select name="status">
+          <option value="forming">Forming</option>
+          <option value="active">Active</option>
+          <option value="complete">Complete</option>
+        </select>
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="add-team-modal">Cancel</button>
+          <button class="btn-primary" type="submit">Create Team</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="edit-team-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Team</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="edit-team-modal">✕</button>
+      </div>
+      <form id="edit-team-form" class="modal-form">
+        <div class="modal-error" id="edit-team-error"></div>
+        <label>Team Name</label>
+        <input type="text" name="name" required placeholder="e.g. AI Software Team" />
+        <label>Project Title</label>
+        <input type="text" name="project_title" required placeholder="e.g. AI Medical Diagnosis System" />
+        <label>Supervisor</label>
+        <select name="supervisor_id" id="edit-team-supervisor-select">
+          <option value="">Unassigned</option>
+        </select>
+        <label>Status</label>
+        <select name="status" required>
+          <option value="forming">Forming</option>
+          <option value="active">Active</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="completed">Completed</option>
+          <option value="disbanded">Disbanded</option>
+        </select>
+        <label>Proposal Status</label>
+        <select name="proposal_status" required>
+          <option value="none">None</option>
+          <option value="draft">Draft</option>
+          <option value="submitted">Submitted</option>
+          <option value="under_review">Under review</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="edit-team-modal">Cancel</button>
+          <button class="btn-primary" type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="add-supervisor-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Add Supervisor</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="add-supervisor-modal">✕</button>
+      </div>
+      <form id="add-supervisor-form" class="modal-form">
+        <div class="modal-error" id="add-supervisor-error"></div>
+        <label>First Name</label>
+        <input type="text" name="first_name" required placeholder="e.g. Hammam" />
+        <label>Last Name</label>
+        <input type="text" name="last_name" required placeholder="e.g. Al-Obaidi" />
+        <label>Email</label>
+        <input type="email" name="email" required placeholder="e.g. hammam@just.edu.jo" />
+        <label>Department</label>
+        <input type="text" name="department" required placeholder="e.g. Computer Science" />
+        <label>Capacity</label>
+        <input type="number" min="0" name="capacity" required placeholder="e.g. 3" />
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="add-supervisor-modal">Cancel</button>
+          <button class="btn-primary" id="supervisor-modal-submit-btn" type="submit">Create Supervisor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="delete-supervisor-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Delete Supervisor</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="delete-supervisor-modal">✕</button>
+      </div>
+      <div class="modal-form">
+        <div class="modal-error" id="delete-supervisor-error"></div>
+        <div style="color:#334155;font-size:14px;line-height:1.5;margin-bottom:14px">
+          Are you sure you want to delete <strong id="delete-supervisor-name">this supervisor</strong>?
+        </div>
+        <div id="delete-supervisor-warning" style="display:none;color:#b45309;font-size:13px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:12px">
+          This supervisor is assigned to teams. Reassign those teams before deleting.
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="delete-supervisor-modal">Cancel</button>
+          <button class="btn-primary" id="btn-confirm-delete-supervisor" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="schedule-defense-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Schedule Defense</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="schedule-defense-modal">✕</button>
+      </div>
+      <form id="schedule-defense-form" class="modal-form">
+        <div class="modal-error" id="schedule-defense-error"></div>
+        <label>Team</label>
+        <select name="team_id" id="defense-team-select" required>
+          <option value="" disabled selected>Choose a team…</option>
+        </select>
+        <label>Date</label>
+        <input type="date" name="date" required />
+        <label>Time</label>
+        <input type="time" name="time" required />
+        <label>Location / Room</label>
+        <input type="text" name="location" placeholder="e.g. Hall A - 201" />
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="schedule-defense-modal">Cancel</button>
+          <button class="btn-primary" type="submit">Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Defense Modal -->
+  <div class="modal-overlay" id="edit-defense-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Defense Session</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="edit-defense-modal">✕</button>
+      </div>
+      <form id="edit-defense-form" class="modal-form">
+        <div class="modal-error" id="edit-defense-error"></div>
+        <input type="hidden" id="edit-defense-id" />
+        <label>Date</label>
+        <input type="date" name="date" id="edit-defense-date" required />
+        <label>Time</label>
+        <input type="time" name="time" id="edit-defense-time" required />
+        <label>Location / Room</label>
+        <input type="text" name="location" id="edit-defense-location" placeholder="e.g. Room 201" />
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="edit-defense-modal">Cancel</button>
+          <button class="btn-primary" type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="add-proposal-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="proposal-modal-title">Add Proposal</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="add-proposal-modal">✕</button>
+      </div>
+      <form id="add-proposal-form" class="modal-form" enctype="multipart/form-data">
+        <div class="modal-error" id="add-proposal-error"></div>
+        <label>Team</label>
+        <select name="team_id" id="proposal-team-select" required>
+          <option value="" disabled selected>Choose a team...</option>
+        </select>
+        <label>Project Title</label>
+        <input type="text" name="title" required placeholder="e.g. AI Medical Diagnosis System" />
+        <label>Supervisor</label>
+        <select name="supervisor_id" id="proposal-supervisor-select" required>
+          <option value="" disabled selected>Choose a supervisor...</option>
+        </select>
+        <label>Proposal File (PDF/DOC/DOCX)</label>
+        <input type="file" name="file" id="proposal-file-input" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        <label>Status</label>
+        <select name="status" required>
+          <option value="pending" selected>Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="draft">Draft</option>
+        </select>
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="add-proposal-modal">Cancel</button>
+          <button class="btn-primary" id="proposal-modal-submit-btn" type="submit">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="delete-proposal-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Delete Proposal</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="delete-proposal-modal">✕</button>
+      </div>
+      <div class="modal-form">
+        <div class="modal-error" id="delete-proposal-error"></div>
+        <div style="color:#334155;font-size:14px;line-height:1.5;margin-bottom:14px">
+          Are you sure you want to delete <strong id="delete-proposal-title">this proposal</strong>? This action cannot be undone.
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="delete-proposal-modal">Cancel</button>
+          <button class="btn-primary" id="btn-confirm-delete-proposal" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="add-student-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="student-modal-title">Add Student</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="add-student-modal">✕</button>
+      </div>
+      <form id="add-student-form" class="modal-form">
+        <div class="modal-error" id="add-student-error"></div>
+
+        <label>Student Name</label>
+        <input type="text" name="name" required placeholder="e.g. Ali Ahmed" />
+
+        <label>Email Address</label>
+        <input type="email" name="email" required placeholder="e.g. ali@cit.just.edu.jo" />
+
+        <label>Status</label>
+        <select name="status" required>
+          <option value="active">Active</option>
+          <option value="pending" selected>Pending</option>
+        </select>
+
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="add-student-modal">Cancel</button>
+          <button class="btn-primary" id="student-modal-submit-btn" type="submit">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="delete-student-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Delete Student</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="delete-student-modal">✕</button>
+      </div>
+      <div class="modal-form">
+        <div class="modal-error" id="delete-student-error"></div>
+        <div style="color:#334155;font-size:14px;line-height:1.5;margin-bottom:14px">
+          Are you sure you want to delete <strong id="delete-student-name">this student</strong>? This action cannot be undone.
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" type="button" data-modal-close="delete-student-modal">Cancel</button>
+          <button class="btn-primary" id="btn-confirm-delete-student" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== GRADE MODALS ===== -->
+  <div class="modal-overlay" id="add-grade-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="grade-modal-title">Add Grade</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="add-grade-modal">✕</button>
+      </div>
+      <form id="add-grade-form" onsubmit="submitGradeForm(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="grade-team-select">Team *</label>
+            <select id="grade-team-select" name="team_id" required>
+              <option value="" disabled selected>Choose a team...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="grade-supervisor-grade">Supervisor Grade (0-100) *</label>
+            <input type="number" id="grade-supervisor-grade" name="supervisor_grade" 
+                   min="0" max="100" step="0.01" required 
+                   oninput="validateGradeInput(this)" />
+            <small>Maximum: 100 points</small>
+          </div>
+          <div class="form-group">
+            <label for="grade-committee1-grade">Committee Doctor 1 Grade (0-100) *</label>
+            <input type="number" id="grade-committee1-grade" name="committee1_grade" 
+                   min="0" max="100" step="0.01" required 
+                   oninput="validateGradeInput(this)" />
+            <small>Maximum: 100 points</small>
+          </div>
+          <div class="form-group">
+            <label for="grade-committee2-grade">Committee Doctor 2 Grade (0-100) *</label>
+            <input type="number" id="grade-committee2-grade" name="committee2_grade" 
+                   min="0" max="100" step="0.01" required 
+                   oninput="validateGradeInput(this)" />
+            <small>Maximum: 100 points</small>
+          </div>
+          <div class="form-group">
+            <label for="grade-status-select">Status</label>
+            <select id="grade-status-select" name="status">
+              <option value="draft">Draft</option>
+              <option value="submitted">Submitted</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="form-group" id="grade-preview" style="display:none;">
+            <label>Calculated Final Grade</label>
+            <div class="grade-preview-box">
+              <span id="preview-final-grade">-</span> / 100
+              <span id="preview-letter-grade" class="tag">-</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div id="add-grade-error" class="modal-error"></div>
+          <button type="button" class="btn-secondary" data-modal-close="add-grade-modal">Cancel</button>
+          <button type="submit" class="btn-primary" id="grade-modal-submit-btn">Add Grade</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="delete-grade-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Delete Grade</h3>
+        <button class="modal-close-btn" type="button" data-modal-close="delete-grade-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete the grade for <strong id="delete-grade-team-name">this team</strong>?</p>
+        <p>This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <div id="delete-grade-error" class="modal-error"></div>
+        <button type="button" class="btn-secondary" data-modal-close="delete-grade-modal">Cancel</button>
+        <button type="button" class="btn-danger" id="btn-confirm-delete-grade">Delete Grade</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ui-feedback" class="ui-feedback" role="status" aria-live="polite"></div>
+
+  <script>
+// Check admin access
+  const _adminUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const _adminToken = localStorage.getItem('access');
+  if (!_adminToken || !_adminUser || _adminUser.role !== 'admin') {
+    location.href = '/login.html';
+  }
+  </script>
+  <script src="/static/admin.js"></script>
+</body>
+</html>

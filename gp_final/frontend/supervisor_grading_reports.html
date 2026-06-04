@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grading &amp; Reports</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+    .page-sub { color: #64748b; font-size: 0.875rem; margin-bottom: 18px; }
+
+    .flash { padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 13px; display: none; }
+    .flash-ok  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .flash-err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #fff; border-radius: 14px;
+      padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,.05);
+    }
+    .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+
+    label { display: block; font-size: 13px; font-weight: 600; margin-top: 12px; margin-bottom: 5px; color: #0f172a; }
+    input[type=number], input[type=file], select, textarea {
+      width: 100%; border: 1px solid #cbd5e1; border-radius: 8px;
+      padding: 9px 10px; font-size: 14px; font-family: inherit;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb; }
+
+    .final-box {
+      margin: 14px 0; padding: 10px 14px; border-radius: 8px;
+      background: #eff6ff; border: 1px solid #bfdbfe;
+      color: #1e3a8a; font-weight: 600; font-size: 0.95rem;
+    }
+
+    .btn {
+      margin-top: 14px; border: 0; padding: 10px 18px;
+      border-radius: 8px; cursor: pointer; font-size: 13px;
+      font-weight: 600; background: #2563eb; color: #fff;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #1d4ed8; }
+
+    /* Search */
+    .search-input {
+      width: 100%; border: 1px solid #cbd5e1; border-radius: 8px;
+      padding: 9px 10px; font-size: 14px; margin-bottom: 14px;
+    }
+    .search-input:focus { outline: none; border-color: #2563eb; }
+
+    /* Reports table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+    td strong { color: #2563eb; }
+
+    .empty { color: #94a3b8; text-align: center; padding: 1.5rem; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <aside id="supervisor-sidebar"></aside>
+
+  <main class="main-content">
+    <h1>Grading &amp; Reports</h1>
+    <p class="page-sub">Weighted grading (Chief 50% · Examiner 1 25% · Examiner 2 25%) — final grade calculated automatically.</p>
+
+    <div id="msg" class="flash"></div>
+
+    <div class="layout">
+      <!-- Left: form -->
+      <section class="card">
+        <h2>Submit New Report</h2>
+        <form id="grade-form">
+          <label>Team</label>
+          <select name="team_id" id="g-team" required></select>
+
+          <label>Phase</label>
+          <select name="phase" required>
+            <option value="Proposal">Proposal</option>
+            <option value="Midterm">Midterm</option>
+            <option value="Final">Final</option>
+          </select>
+
+          <label>Chief Supervisor Grade (0–100)</label>
+          <input type="number" name="chief_grade" min="0" max="100" step="0.01" required />
+
+          <label>Examiner 1 Grade (0–100)</label>
+          <input type="number" name="examiner_one_grade" min="0" max="100" step="0.01" required />
+
+          <label>Examiner 2 Grade (0–100)</label>
+          <input type="number" name="examiner_two_grade" min="0" max="100" step="0.01" required />
+
+          <div class="final-box">Final Grade: <span id="preview-final">—</span></div>
+
+          <label>Feedback</label>
+          <textarea name="feedback" rows="3"></textarea>
+
+          <label>Archive File (optional)</label>
+          <input type="file" name="archived_file" />
+
+          <button type="submit" class="btn">Save Report</button>
+        </form>
+      </section>
+
+      <!-- Right: reports list -->
+      <section class="card">
+        <h2>Saved Reports</h2>
+        <input type="text" id="search-input" class="search-input" placeholder="Search by team or phase…" />
+        <div id="rep-wrap"><p class="empty">Loading…</p></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/static/api.js?v=2"></script>
+  <script src="/static/supervisor-common.js"></script>
+  <script>
+    GPNav.mount('grading');
+
+    function flash(text, ok) {
+      const m = document.getElementById('msg');
+      m.textContent = text;
+      m.className = 'flash ' + (ok ? 'flash-ok' : 'flash-err');
+      m.style.display = 'block';
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // Live final-grade preview
+    let previewTimer;
+    async function runPreview() {
+      const fd = new FormData(document.getElementById('grade-form'));
+      const c = fd.get('chief_grade'), e1 = fd.get('examiner_one_grade'), e2 = fd.get('examiner_two_grade');
+      if (c === '' || e1 === '' || e2 === '') {
+        document.getElementById('preview-final').textContent = '—';
+        return;
+      }
+      try {
+        const p = await GPApi.gradingPreview({ chief_grade: c, examiner_one_grade: e1, examiner_two_grade: e2 });
+        document.getElementById('preview-final').textContent = p.final_grade;
+      } catch {
+        document.getElementById('preview-final').textContent = '—';
+      }
+    }
+    document.getElementById('grade-form').querySelectorAll('input[type=number]').forEach((inp) => {
+      inp.addEventListener('input', () => { clearTimeout(previewTimer); previewTimer = setTimeout(runPreview, 300); });
+    });
+
+    // Load teams into select
+    async function loadTeams() {
+      const sel = document.getElementById('g-team');
+      const teams = await GPApi.teams();
+      sel.innerHTML = teams.length
+        ? teams.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')
+        : '<option value="">— No teams —</option>';
+    }
+
+    // Render reports table with optional client-side search
+    let allReports = [];
+    async function loadReports() {
+      const w = document.getElementById('rep-wrap');
+      try {
+        allReports = await GPApi.gradingList();
+        renderTable();
+      } catch (e) {
+        w.innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+      }
+    }
+
+    function renderTable() {
+      const q = (document.getElementById('search-input').value || '').toLowerCase();
+      const rows = allReports.filter(
+        (r) => !q || (r.team_name || '').toLowerCase().includes(q) || (r.phase || '').toLowerCase().includes(q)
+      );
+      const w = document.getElementById('rep-wrap');
+      if (!rows.length) { w.innerHTML = '<p class="empty">No reports found.</p>'; return; }
+      w.innerHTML = `
+        <table>
+          <thead><tr><th>Team</th><th>Phase</th><th>Chief</th><th>E1</th><th>E2</th><th>Final</th><th>Date</th></tr></thead>
+          <tbody>
+            ${rows.map((r) => `
+              <tr>
+                <td>${esc(r.team_name)}</td>
+                <td>${esc(r.phase)}</td>
+                <td>${esc(String(r.chief_grade))}</td>
+                <td>${esc(String(r.examiner_one_grade))}</td>
+                <td>${esc(String(r.examiner_two_grade))}</td>
+                <td><strong>${esc(String(r.final_grade))}</strong></td>
+                <td>${esc((r.created_at || '').slice(0, 10))}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    document.getElementById('search-input').addEventListener('input', renderTable);
+
+    // Submit grading form
+    document.getElementById('grade-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const fileInput = e.target.querySelector('input[type=file]');
+      const hasFile   = fileInput && fileInput.files.length > 0;
+
+      try {
+        let res;
+        if (hasFile) {
+          // Use FormData when a file is attached
+          res = await GPApi.apiFetch('/supervisor/grading/', { method: 'POST', body: fd });
+        } else {
+          // JSON for text-only fields (exclude the empty file field)
+          const body = {};
+          fd.forEach((v, k) => { if (!(v instanceof File)) body[k] = v; });
+          res = await GPApi.apiFetch('/supervisor/grading/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+        }
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || data.detail || 'Failed to save report');
+        flash('Report saved and team notified.', true);
+        e.target.querySelector('textarea[name=feedback]').value = '';
+        if (fileInput) fileInput.value = '';
+        GPNav.updateUnreadBadge();
+        await loadReports();
+      } catch (err) { flash(err.message, false); }
+    });
+
+    (async function () {
+      try { await loadTeams(); await loadReports(); runPreview(); }
+      catch (e) { flash(e.message, false); }
+    })();
+  </script>
+</body>
+</html>

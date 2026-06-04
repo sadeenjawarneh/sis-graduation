@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><title>Team Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+body{display:flex;background:#f4f6fb;color:#0f172a;min-height:100vh}
+.sidebar{width:240px;background:linear-gradient(180deg,#1e3c72,#2a5298);color:#fff;padding:20px;flex-shrink:0}
+.sidebar h2{font-size:16px;margin-bottom:20px}
+.sidebar a{display:block;color:#fff;text-decoration:none;padding:10px;border-radius:8px;margin-bottom:6px;font-size:13px;cursor:pointer;transition:.2s}
+.sidebar a:hover{background:rgba(255,255,255,.15)}
+.main{flex:1;padding:25px;overflow-x:hidden}
+
+/* Top bar */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.topbar h1{color:#1a237e;font-size:1.4rem}
+.notif-btn{position:relative;cursor:pointer;background:#fff;border:1px solid #e2e8f0;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.notif-btn i{font-size:16px;color:#1a237e}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 5px;border-radius:10px;display:none}
+
+/* Notification panel */
+.notif-panel{position:fixed;top:0;right:-360px;width:340px;height:100vh;background:#fff;box-shadow:-4px 0 20px rgba(0,0,0,.1);z-index:1000;transition:.3s;display:flex;flex-direction:column}
+.notif-panel.open{right:0}
+.notif-header{display:flex;justify-content:space-between;align-items:center;padding:18px;border-bottom:1px solid #eee}
+.notif-header h3{color:#1a237e;font-size:15px}
+.notif-close{cursor:pointer;font-size:18px;color:#888}
+.notif-list{flex:1;overflow-y:auto;padding:10px}
+.notif-item{padding:12px;border-radius:10px;margin-bottom:8px;background:#f8fafc;border-left:3px solid #1a237e;font-size:13px;transition:.2s}
+.notif-item.unread{background:#eff6ff;border-left-color:#3b82f6}
+.notif-item b{display:block;margin-bottom:3px;color:#1a237e}
+.notif-item span{color:#64748b;line-height:1.4}
+.notif-mark-btn{margin:10px;padding:10px;background:#1a237e;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat{background:#fff;padding:15px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.05)}
+.stat h3{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+.stat p{font-size:24px;font-weight:700;color:#1a237e;margin-top:5px}
+
+/* Cards */
+.card{background:#fff;padding:18px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,.05);margin-bottom:16px}
+.card h3{color:#1a237e;margin-bottom:14px;font-size:15px;display:flex;align-items:center;gap:8px}
+
+.badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700}
+.b-pending {background:#fff3cd;color:#856404}
+.b-active  {background:#d1fae5;color:#065f46}
+.b-full    {background:#fee2e2;color:#991b1b}
+.b-expired {background:#e2e8f0;color:#475569}
+.b-locked  {background:#fce7f3;color:#9d174d}
+
+.member-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.member-row:last-child{border-bottom:none}
+.leader-tag{background:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:6px}
+.empty{color:#94a3b8;font-size:13px;padding:8px 0;text-align:center}
+
+/* Vote card */
+.vote-req{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px}
+.vote-req .name{font-weight:600;color:#1a237e;font-size:14px;margin-bottom:6px}
+.vote-progress{background:#f1f5f9;border-radius:20px;height:8px;margin:8px 0;overflow:hidden}
+.vote-bar{background:#22c55e;height:100%;border-radius:20px;transition:.4s}
+.vote-meta{font-size:12px;color:#64748b;margin-bottom:10px}
+.vote-btns{display:flex;gap:8px}
+.btn{border:none;padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;transition:.2s}
+.btn-yes{background:#22c55e;color:#fff}
+.btn-no {background:#ef4444;color:#fff}
+.btn-yes:hover{background:#16a34a}
+.btn-no:hover {background:#dc2626}
+.voted-tag{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:600}
+.voted-yes{background:#d1fae5;color:#065f46}
+.voted-no {background:#fee2e2;color:#991b1b}
+
+/* Files */
+.file-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;background:#f8fafc;margin-bottom:8px;font-size:13px}
+.file-item a{color:#1a237e;font-weight:600;text-decoration:none}
+.file-item a:hover{text-decoration:underline}
+.file-ext{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#e0e7ff;color:#3730a3;margin-left:6px}
+.file-feedback{font-size:12px;color:#64748b;margin-top:4px;font-style:italic}
+.upload-area{border:2px dashed #cbd5e1;border-radius:10px;padding:20px;text-align:center;cursor:pointer;color:#64748b;font-size:13px;transition:.2s;margin-top:10px}
+.upload-area:hover{border-color:#1a237e;background:#f0f4ff}
+.upload-area input{display:none}
+.upload-btn{background:#1a237e;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;margin-top:8px;transition:.2s}
+.upload-btn:hover{background:#283593}
+
+/* Exam Dates */
+.exam-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.exam-item:last-child{border-bottom:none}
+.exam-badge{background:#fef3c7;color:#92400e;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:700;white-space:nowrap}
+.exam-badge.past{background:#f1f5f9;color:#94a3b8}
+
+/* Meetings */
+.meeting-item{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid #f0f0f0}
+.meeting-item:last-child{border-bottom:none}
+.meeting-date-box{background:#e0e7ff;color:#3730a3;border-radius:10px;padding:8px 12px;text-align:center;min-width:56px;flex-shrink:0}
+.meeting-date-box .day{font-size:20px;font-weight:700;line-height:1}
+.meeting-date-box .mon{font-size:11px;font-weight:600;text-transform:uppercase}
+.meeting-info h4{font-size:14px;color:#1a237e;margin:0 0 3px}
+.meeting-info p{font-size:12px;color:#64748b;margin:0}
+.meeting-type-tag{display:inline-block;background:#d1fae5;color:#065f46;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- Notification Panel -->
+<div class="notif-panel" id="notifPanel">
+    <div class="notif-header">
+        <h3><i class="fas fa-bell"></i> Notifications</h3>
+        <i class="fas fa-times notif-close" onclick="toggleNotif()"></i>
+    </div>
+    <div class="notif-list" id="notifList"><p class="empty">Loading…</p></div>
+    <button class="notif-mark-btn" onclick="markAllRead()">Mark all as read</button>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2><i class="fas fa-users"></i> Team Panel</h2>
+    <a href="/team_dashboard.html"><i class="fas fa-house"></i> Dashboard</a>
+    <a href="/chat.html"><i class="fas fa-comments"></i> Chat</a>
+    <a onclick="window.location.href='/supervisor-request.html'"><i class="fas fa-user-plus"></i> Supervisor Requests</a>
+    <a onclick="doLeave()"><i class="fas fa-right-from-bracket"></i> Leave Team</a>
+    <a onclick="Auth.logout()"><i class="fas fa-power-off"></i> Logout</a>
+</div>
+
+<!-- Main -->
+<div class="main">
+    <div class="topbar">
+        <div>
+            <h1 id="teamName">Team Dashboard</h1>
+            <p style="color:#64748b;font-size:13px;margin-top:3px">Manage your team, members, and requests</p>
+        </div>
+        <div class="notif-btn" onclick="toggleNotif()">
+            <i class="fas fa-bell"></i>
+            <span class="notif-badge" id="notifBadge">0</span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat"><h3>Members</h3><p id="membersCount">0</p></div>
+        <div class="stat"><h3>Votes Pending</h3><p id="voteCount">0</p></div>
+        <div class="stat"><h3>Status</h3><p id="statusTxt">—</p></div>
+    </div>
+
+    <!-- Status -->
+    <div class="card">
+        <h3>Team Status</h3>
+        <span id="statusBadge" class="badge b-pending">Pending</span>
+        <span id="supInfo" style="font-size:13px;color:#64748b;margin-left:12px"></span>
+    </div>
+
+    <!-- Members -->
+    <div class="card">
+        <h3><i class="fas fa-users"></i> Members</h3>
+        <div id="membersList"></div>
+    </div>
+
+    <!-- Join Requests — visible to all, decisions by leader only -->
+    <div class="card" id="voteCard">
+        <h3><i class="fas fa-user-plus"></i> Pending Join Requests</h3>
+        <div id="voteList"><p class="empty">No pending requests.</p></div>
+    </div>
+
+    <!-- File Management (section 9) -->
+    <div class="card">
+        <h3><i class="fas fa-folder-open"></i> Project Files</h3>
+        <div id="fileList"><p class="empty">No files uploaded yet.</p></div>
+        <label class="upload-area" id="uploadArea">
+            <i class="fas fa-cloud-upload-alt fa-2x" style="margin-bottom:8px;color:#94a3b8"></i>
+            <div>Click to upload a file</div>
+            <small>PDF, Word, PowerPoint, Images</small>
+            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png" onchange="uploadFile(this)">
+        </label>
+        <div id="uploadMsg" style="font-size:13px;margin-top:8px;color:#16a34a;display:none"></div>
+    </div>
+
+    <!-- Exam Dates -->
+    <div class="card">
+        <h3><i class="fas fa-calendar-check"></i> Exam Dates</h3>
+        <div id="examDatesList"><p class="empty">Loading…</p></div>
+    </div>
+
+    <!-- Schedule Discussions -->
+    <div class="card">
+        <h3><i class="fas fa-calendar-alt"></i> Scheduled Discussions</h3>
+        <div id="meetingsList"><p class="empty">Loading…</p></div>
+    </div>
+</div>
+
+<script src="/static/api.js?v=2"></script>
+<script>
+    if (!GPApi.getAccess()) location.href = '/login.html';
+    const me = GPApi.getUser();
+    let team = null, teamId = null;
+
+    // ── Notifications ───────────────────────────────────────
+    const notifWS = new NotifSocket({
+        onCount: count => {
+            const badge = document.getElementById('notifBadge');
+            badge.textContent    = count;
+            badge.style.display  = count > 0 ? 'block' : 'none';
+        },
+        onNotification: d => {
+            showToast(d.title, d.message);
+            loadNotifications();
+        }
+    });
+    // notifWS.connect();
+
+    function toggleNotif() {
+        document.getElementById('notifPanel').classList.toggle('open');
+        loadNotifications();
+    }
+
+    async function loadNotifications() {
+        const list = document.getElementById('notifList');
+        try {
+            const items = await Teams.getNotifications();
+            if (!items.length) { list.innerHTML = '<p class="empty">No notifications.</p>'; return; }
+            list.innerHTML = items.map(n => `
+                <div class="notif-item ${n.is_read ? '' : 'unread'}">
+                    <b>${n.title || 'Notification'}</b>
+                    <span>${n.message || ''}</span>
+                    <small style="color:#94a3b8;display:block;margin-top:4px">
+                        ${n.created_at ? new Date(n.created_at).toLocaleString() : ''}
+                    </small>
+                </div>`).join('');
+            // Update badge
+            const unread = items.filter(n => !n.is_read).length;
+            const badge = document.getElementById('notifBadge');
+            badge.textContent = unread;
+            badge.style.display = unread > 0 ? 'block' : 'none';
+        } catch(e) {
+            list.innerHTML = '<p class="empty">Could not load notifications.</p>';
+        }
+    }
+
+    async function markAllRead() {
+        try {
+            await Teams.markRead();
+            document.getElementById('notifBadge').style.display = 'none';
+            loadNotifications();
+        } catch(e) { /* silent */ }
+    }
+
+    // Simple toast
+    function showToast(title, msg) {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#1a237e;color:#fff;padding:12px 18px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:9999;max-width:300px;font-size:13px;animation:fadeIn .3s';
+        t.innerHTML = `<b style="display:block;margin-bottom:4px">${title}</b>${msg}`;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 4000);
+    }
+
+    // ── Main Load ───────────────────────────────────────────
+    async function load() {
+    const t = await Teams.myTeam();
+    console.log('team loaded:', t);
+    if (!t) { location.href = '/student_dashboard.html'; return; }
+    team = t;
+    teamId = t.id;
+    console.log('teamId set to:', teamId);
+    localStorage.setItem('currentTeam', JSON.stringify(t));
+    renderTeam();
+    loadVoteRequests();
+    loadFiles();
+    loadExamDates();
+    loadMeetings();
+}
+    function renderTeam() {
+    document.getElementById('teamName').textContent = team.name;
+    document.getElementById('membersCount').textContent = team.members?.length || 0;
+    document.getElementById('statusTxt').textContent = team.status;
+
+    const badge = document.getElementById('statusBadge');
+    const bMap = {forming:'b-pending',active:'b-active',full:'b-full',expired:'b-expired',locked:'b-locked'};
+    badge.textContent = team.status.toUpperCase();
+    badge.className = `badge ${bMap[team.status] || 'b-pending'}`;
+
+    document.getElementById('supInfo').textContent = team.assigned_supervisor
+        ? `Supervisor: ${team.assigned_supervisor.display_name}` : '';
+
+    const mList = document.getElementById('membersList');
+    mList.innerHTML = (team.members || []).map(m => `
+        <div class="member-row">
+            <span>
+                ${m.display_name}
+                ${m.id === team.leader?.id ? '<span class="leader-tag">Leader</span>' : ''}
+            </span>
+        </div>`).join('') || '<p class="empty">No members yet.</p>';
+}
+
+    // ── Join Requests (Majority Vote) ─────────────────────────
+    async function loadVoteRequests() {
+        const box = document.getElementById('voteList');
+        try {
+            const reqs = await Teams.getJoinRequests(teamId);
+            document.getElementById('voteCount').textContent = reqs.length;
+            if (!reqs.length) { box.innerHTML = '<p class="empty">No pending join requests.</p>'; return; }
+
+            box.innerHTML = reqs.map(r => {
+                const name  = r.student_info?.display_name || 'Unknown';
+                const email = r.student_info?.email        || '';
+                const yes   = r.yes_count      || 0;
+                const no    = r.no_count       || 0;
+                const total = r.total_members  || 1;
+                const req   = r.required_votes || 1;
+                const pct   = Math.round((yes / total) * 100);
+                const myVote = r.my_vote;
+
+                const progressBar = `
+                    <div class="vote-progress" style="margin:8px 0 4px">
+                        <div class="vote-bar" style="width:${Math.min(pct,100)}%"></div>
+                    </div>
+                    <div class="vote-meta">
+                        ✓ ${yes} موافق · ✗ ${no} رافض · يحتاج ${req} من ${total}
+                        <span style="color:#94a3b8">(${pct}%)</span>
+                    </div>`;
+
+                let actionHTML;
+                if (myVote) {
+                    actionHTML = `<span class="voted-tag ${myVote==='yes'?'voted-yes':'voted-no'}">
+                        ${myVote==='yes' ? '✓ صوّتت بالموافقة' : '✗ صوّتت بالرفض'}
+                    </span>`;
+                } else {
+                    actionHTML = `<div class="vote-btns" style="margin-top:8px">
+                        <button class="btn btn-yes" onclick="castVote(${r.id},'yes')">
+                            <i class="fas fa-check"></i> موافق
+                        </button>
+                        <button class="btn btn-no" onclick="castVote(${r.id},'no')">
+                            <i class="fas fa-times"></i> رفض
+                        </button>
+                    </div>`;
+                }
+
+                return `
+                    <div class="vote-req">
+                        <div class="name">
+                            <b>${name}</b> يريد الانضمام
+                            <div style="font-size:12px;color:#64748b;margin-top:3px">
+                                <i class="fas fa-envelope"></i> ${email}
+                            </div>
+                        </div>
+                        ${progressBar}
+                        ${actionHTML}
+                    </div>`;
+            }).join('');
+        } catch (e) {
+            document.getElementById('voteCount').textContent = '0';
+            box.innerHTML = '<p class="empty">Could not load join requests.</p>';
+        }
+    }
+
+    async function castVote(reqId, decision) {
+        try {
+            const res = await Teams.vote(reqId, decision, teamId);
+            if (res.new_status === 'accepted') {
+                showToast('تمت الموافقة!', `حصل الطالب على أغلبية الأصوات وانضم للفريق.`);
+            } else if (res.new_status === 'rejected') {
+                showToast('تم الرفض', 'حصل الطلب على أغلبية أصوات الرفض.');
+            } else {
+                showToast('تم تسجيل صوتك', `${res.yes_count || 0} موافق · ${res.no_count || 0} رافض · يحتاج ${res.required || 1}`);
+            }
+            load();
+        } catch(e) {
+            showToast('خطأ', e.message || 'فشل العملية.');
+        }
+    }
+
+    // ── Files (section 9) ───────────────────────────────────
+    async function loadFiles() {
+        const files = await Teams.getFiles(teamId);
+        const box   = document.getElementById('fileList');
+        if (!files.length) { box.innerHTML = '<p class="empty">No files uploaded yet.</p>'; return; }
+
+        box.innerHTML = files.map(f => {
+            const name = f.file_name || f.filename || 'File';
+            const url  = f.file_url  || f.file    || '#';
+            const ext  = name.split('.').pop().toUpperCase();
+            const isOwner = f.uploader_name === me?.display_name;
+            return `
+                <div class="file-item">
+                    <div style="flex:1">
+                        <a href="${url}" target="_blank">${name}</a>
+                        <span class="file-ext">${ext}</span>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:2px">
+                            By ${f.uploader_name || '—'} · ${new Date(f.created_at).toLocaleDateString()}
+                        </div>
+                        ${f.feedback ? `<div class="file-feedback"><i class="fas fa-comment"></i> ${f.feedback}</div>` : ''}
+                    </div>
+                    ${isOwner ? `<button onclick="deleteFile(${f.id})" style="border:none;background:#fee2e2;color:#dc2626;padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">Delete</button>` : ''}
+                </div>`;
+        }).join('');
+    }
+
+    async function uploadFile(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const msg = document.getElementById('uploadMsg');
+        msg.style.display = 'block';
+        msg.style.color   = '#64748b';
+        msg.textContent   = `Uploading "${file.name}"…`;
+
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('team_id', teamId);
+
+        const rawRes = await Teams.uploadFile(teamId, fd);
+        const res = rawRes.ok ? await rawRes.json().catch(() => ({})) : {};
+        if (res.id) {
+            msg.style.color  = '#16a34a';
+            msg.textContent  = `"${file.name}" uploaded successfully!`;
+            input.value      = '';
+            loadFiles();
+            setTimeout(() => { msg.style.display = 'none'; }, 3000);
+        } else {
+            msg.style.color = '#ef4444';
+            msg.textContent = res.detail || 'Upload failed.';
+        }
+    }
+
+    // ── Delete file ─────────────────────────────────────────
+    async function deleteFile(fileId) {
+        if (!confirm('Delete this file?')) return;
+        try {
+            const res = await GPApi.apiFetch(`/files/${fileId}/delete/`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+                showToast('File Deleted', 'The file was deleted successfully.');
+                loadFiles();
+            } else {
+                const d = await res.json().catch(() => ({}));
+                showToast('Error', d.error || 'Could not delete file.');
+            }
+        } catch(e) { showToast('Error', e.message); }
+    }
+
+    // ── Exam Dates ────────────────────────────────────────────
+    async function loadExamDates() {
+        const box = document.getElementById('examDatesList');
+        try {
+            const dates = await GPApi.getJson(`/teams/${teamId}/exam-dates/`).catch(() => []);
+            if (!dates.length) {
+                box.innerHTML = '<p class="empty">No exam dates set yet.</p>';
+                return;
+            }
+            const today = new Date().toISOString().slice(0, 10);
+            const sorted = [...dates].sort((a, b) => a.date < b.date ? -1 : 1);
+            box.innerHTML = sorted.map(d => {
+                const isPast = d.date < today;
+                const dateObj = new Date(d.date + 'T00:00:00');
+                const formatted = dateObj.toLocaleDateString('en-GB', {
+                    weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'
+                });
+                const daysLeft = Math.round((dateObj - new Date()) / 86400000);
+                const label = isPast ? 'Passed'
+                    : daysLeft === 0 ? 'Today!'
+                    : daysLeft === 1 ? 'Tomorrow!'
+                    : `${daysLeft} days left`;
+                return `
+                    <div class="exam-item">
+                        <span class="exam-badge ${isPast ? 'past' : ''}">
+                            <i class="fas fa-star"></i> ${formatted}
+                        </span>
+                        <span style="font-size:12px;color:${isPast ? '#94a3b8' : daysLeft <= 3 ? '#dc2626' : '#64748b'};font-weight:600">
+                            ${label}
+                        </span>
+                    </div>`;
+            }).join('');
+        } catch(e) {
+            box.innerHTML = '<p class="empty">Could not load exam dates.</p>';
+        }
+    }
+
+    // ── Meetings ─────────────────────────────────────────────
+    async function loadMeetings() {
+        const box = document.getElementById('meetingsList');
+        try {
+            const meetings = await GPApi.getJson('/meetings/').catch(() => []);
+            if (!meetings.length) {
+                box.innerHTML = '<p class="empty">No discussions scheduled yet.</p>';
+                return;
+            }
+            const today = new Date().toISOString().slice(0, 10);
+            const sorted = [...meetings].sort((a, b) => {
+                const da = a.date + 'T' + (a.time || '00:00');
+                const db = b.date + 'T' + (b.time || '00:00');
+                return da < db ? -1 : da > db ? 1 : 0;
+            });
+            box.innerHTML = sorted.map(m => {
+                const d    = new Date(m.date + 'T00:00:00');
+                const day  = d.getDate();
+                const mon  = d.toLocaleString('en', { month: 'short' });
+                const isPast = m.date < today;
+                const dateBoxStyle = isPast
+                    ? 'background:#f1f5f9;color:#94a3b8'
+                    : 'background:#e0e7ff;color:#3730a3';
+                const typeColor = m.meeting_type === 'Direct'
+                    ? 'background:#d1fae5;color:#065f46'
+                    : 'background:#dbeafe;color:#1e40af';
+                return `
+                    <div class="meeting-item">
+                        <div class="meeting-date-box" style="${dateBoxStyle};border-radius:10px;padding:8px 12px;text-align:center;min-width:56px;flex-shrink:0">
+                            <div class="day">${day}</div>
+                            <div class="mon">${mon}</div>
+                        </div>
+                        <div class="meeting-info">
+                            <h4>${m.topic || 'Discussion Session'}</h4>
+                            <p><i class="fas fa-clock"></i> ${m.time ? m.time.slice(0,5) : '—'}
+                               &nbsp;·&nbsp;
+                               <i class="fas fa-user-tie"></i> ${m.supervisor_name || 'Supervisor'}
+                            </p>
+                            <span class="meeting-type-tag" style="${typeColor};display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;margin-top:4px">
+                                ${m.meeting_type || 'Meeting'}
+                            </span>
+                            ${isPast ? '<span style="font-size:11px;color:#94a3b8;margin-left:6px">Completed</span>' : ''}
+                        </div>
+                    </div>`;
+            }).join('');
+        } catch(e) {
+            box.innerHTML = '<p class="empty">Could not load discussions.</p>';
+        }
+    }
+
+    // ── Leave ───────────────────────────────────────────────
+    async function doLeave() {
+    if (!confirm('Are you sure you want to leave the team?')) return;
+    if (!team) { alert('Team not loaded yet, please wait.'); return; }
+    await Teams.leave(team.id);
+    localStorage.removeItem('currentTeam');
+    location.href = '/student_dashboard.html';
+}
+    load();
+    // setInterval(load, 5000);
+</script>
+</body>
+</html>

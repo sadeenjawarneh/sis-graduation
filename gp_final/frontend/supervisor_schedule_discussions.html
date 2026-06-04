@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Schedule Discussions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; }
+    .page-sub { color: #64748b; font-size: 0.875rem; margin-bottom: 18px; }
+
+    .flash { padding: 10px 14px; border-radius: 10px; margin-bottom: 14px; font-size: 13px; display: none; }
+    .flash-ok  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .flash-err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+
+    .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,.05); margin-bottom: 16px; }
+    .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+    .card h3 { font-size: 0.9rem; font-weight: 700; margin: 16px 0 10px; color: #374151; }
+
+    label { display: block; font-size: 13px; font-weight: 600; margin-top: 10px; margin-bottom: 5px; color: #0f172a; }
+    input[type=date], input[type=time], input[type=text], select, textarea {
+      width: 100%; border: 1px solid #cbd5e1; border-radius: 8px;
+      padding: 9px 10px; font-size: 14px; font-family: inherit;
+    }
+    textarea { min-height: 70px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #2563eb; }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .btn { border: 0; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
+    .btn-primary   { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #0ea5e9; color: #fff; }
+    .btn-secondary:hover { background: #0284c7; }
+    .btn-success   { background: #22c55e; color: #fff; }
+    .btn-success:hover { background: #16a34a; }
+    .btn-light     { background: #e2e8f0; color: #1e293b; }
+    .btn-light:hover { background: #cbd5e1; }
+
+    /* Slot / meeting list items */
+    .list-item {
+      padding: 10px 14px; border-radius: 10px;
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      margin-bottom: 8px; font-size: 13px;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px;
+    }
+    .list-item .info { flex: 1; }
+    .list-item .meta { font-size: 12px; color: #64748b; margin-top: 3px; }
+    .open-tag   { color: #166534; font-weight: 600; font-size: 12px; }
+    .closed-tag { color: #b91c1c; font-weight: 600; font-size: 12px; }
+    .btn-del { background: #ef4444; color: #fff; border: 0; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+    .btn-del:hover { background: #dc2626; }
+
+    /* Table for meetings */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+    th { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 600; }
+
+    .empty { color: #94a3b8; text-align: center; padding: 1rem; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <aside id="supervisor-sidebar"></aside>
+
+  <main class="main-content">
+    <h1>Schedule Discussions</h1>
+    <p class="page-sub">Define availability slots, then book a meeting — the system picks the best available time automatically.</p>
+
+    <div id="msg" class="flash"></div>
+
+    <div class="layout">
+      <!-- Left column: forms -->
+      <div>
+        <div class="card">
+          <h2>Add Availability Slot</h2>
+          <form id="slot-form">
+            <label>Date</label>
+            <input type="date" name="date" required />
+            <label>From</label>
+            <input type="time" name="start_time" required />
+            <label>To</label>
+            <input type="time" name="end_time" required />
+            <label>Mode</label>
+            <select name="mode">
+              <option value="Both">Both (Direct &amp; Online)</option>
+              <option value="Direct">Direct Only</option>
+              <option value="Online">Online Only</option>
+            </select>
+            <div class="actions">
+              <button type="submit" class="btn btn-secondary">Add Slot</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Book a Meeting</h2>
+          <form id="book-form">
+            <label>Team</label>
+            <select name="team_id" id="book-team" required></select>
+            <label>Meeting Type</label>
+            <select name="meeting_type">
+              <option value="Online">Online</option>
+              <option value="Direct">Direct</option>
+            </select>
+            <label>Topic</label>
+            <input type="text" name="topic" placeholder="Optional" />
+            <div class="actions">
+              <button type="submit" class="btn btn-success">Find &amp; Book</button>
+              <button type="button" id="clear-btn" class="btn btn-light">Clear</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right column: lists -->
+      <div>
+        <div class="card">
+          <h2>My Availability Slots</h2>
+          <div id="slots-wrap"><p class="empty">Loading…</p></div>
+        </div>
+
+        <div class="card">
+          <h2>Booked Meetings</h2>
+          <div id="meet-wrap"><p class="empty">Loading…</p></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/static/api.js?v=2"></script>
+  <script src="/static/supervisor-common.js"></script>
+  <script>
+    GPNav.mount('schedule');
+
+    function flash(text, ok) {
+      const m = document.getElementById('msg');
+      m.textContent = text;
+      m.className = 'flash ' + (ok ? 'flash-ok' : 'flash-err');
+      m.style.display = 'block';
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    async function refreshTeamsSelect() {
+      const sel = document.getElementById('book-team');
+      const teams = await GPApi.teams();
+      sel.innerHTML = teams.length
+        ? teams.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('')
+        : '<option value="">— No teams —</option>';
+    }
+
+    async function refreshSlots() {
+      const w = document.getElementById('slots-wrap');
+      try {
+        const slots = await GPApi.meetingSlots();
+        if (!slots.length) { w.innerHTML = '<p class="empty">No slots yet. Add one on the left.</p>'; return; }
+        w.innerHTML = slots.map((s) => `
+          <div class="list-item">
+            <div class="info">
+              <strong>${esc(s.date)}</strong> &nbsp; ${esc(s.start_time)} – ${esc(s.end_time)}
+              &nbsp; · &nbsp; ${esc(s.mode)}
+              <div class="meta">
+                <span class="${s.is_open ? 'open-tag' : 'closed-tag'}">${s.is_open ? 'Open' : 'Closed'}</span>
+              </div>
+            </div>
+            <button class="btn-del del-slot" data-id="${s.id}">Delete</button>
+          </div>`).join('');
+
+        w.querySelectorAll('.del-slot').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Delete this slot?')) return;
+            try {
+              await GPApi.deleteSlot(+btn.getAttribute('data-id'));
+              flash('Slot deleted.', true);
+              await refreshSlots();
+            } catch (e) { flash(e.message, false); }
+          });
+        });
+      } catch (e) {
+        w.innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+      }
+    }
+
+    async function refreshMeetings() {
+      const w = document.getElementById('meet-wrap');
+      try {
+        const meetings = await GPApi.meetings();
+        if (!meetings.length) { w.innerHTML = '<p class="empty">No meetings booked yet.</p>'; return; }
+        w.innerHTML = `
+          <table>
+            <thead><tr><th>Team</th><th>Date</th><th>Time</th><th>Type</th><th>Topic</th></tr></thead>
+            <tbody>
+              ${meetings.map((m) => `
+                <tr>
+                  <td>${esc(m.team_name)}</td>
+                  <td>${esc(m.date)}</td>
+                  <td>${esc(m.time)}</td>
+                  <td>${esc(m.meeting_type)}</td>
+                  <td>${esc(m.topic || '—')}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`;
+      } catch (e) {
+        w.innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+      }
+    }
+
+    document.getElementById('slot-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        await GPApi.addSlot({ date: fd.get('date'), start_time: fd.get('start_time'), end_time: fd.get('end_time'), mode: fd.get('mode') });
+        flash('Slot added successfully.', true);
+        e.target.reset();
+        await refreshSlots();
+      } catch (err) { flash(err.message, false); }
+    });
+
+    document.getElementById('book-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      try {
+        await GPApi.bookMeeting({ team_id: +fd.get('team_id'), meeting_type: fd.get('meeting_type'), topic: (fd.get('topic') || '').toString() });
+        flash('Meeting booked and team members notified.', true);
+        GPNav.updateUnreadBadge();
+        await refreshMeetings();
+      } catch (err) { flash(err.message, false); }
+    });
+
+    document.getElementById('clear-btn').onclick = () => document.getElementById('book-form').reset();
+
+    (async function init() {
+      try { await refreshTeamsSelect(); await refreshSlots(); await refreshMeetings(); }
+      catch (e) { flash(e.message, false); }
+    })();
+  </script>
+</body>
+</html>

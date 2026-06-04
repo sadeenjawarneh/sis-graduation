@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><title>Join a Team</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter,sans-serif}
+body{background:#f8fafc;min-height:100vh;padding:40px 20px}
+.container{max-width:640px;margin:0 auto}
+.back-link{display:inline-flex;align-items:center;gap:8px;color:#1a237e;font-weight:600;text-decoration:none;margin-bottom:25px;font-size:14px}
+h1{color:#1a237e;font-size:1.7rem;margin-bottom:6px}
+.sub{color:#64748b;font-size:.9rem;margin-bottom:30px}
+
+/* Status legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;font-size:12px}
+.leg-item{display:flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot-pending{background:#f59e0b}
+.dot-active {background:#22c55e}
+.dot-full   {background:#ef4444}
+.dot-expired{background:#94a3b8}
+
+.team-card{background:#fff;border-radius:15px;padding:22px;border:1px solid #edf2f7;box-shadow:0 6px 20px rgba(0,0,0,.05);margin-bottom:18px;position:relative;transition:.3s}
+.team-card:hover{transform:translateY(-3px);border-color:#1a237e}
+
+.badge{position:absolute;top:14px;right:14px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:700}
+.b-pending {background:#fff3cd;color:#856404}
+.b-active  {background:#d1fae5;color:#065f46}
+.b-full    {background:#fee2e2;color:#991b1b}
+.b-expired {background:#e2e8f0;color:#475569}
+.b-locked  {background:#fce7f3;color:#9d174d}
+
+.team-card h3{color:#1a237e;font-size:1.1rem;margin-bottom:8px;padding-right:90px}
+.team-card p {color:#64748b;font-size:.88rem;margin-bottom:14px;line-height:1.5}
+.meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:13px}
+.count-chip{background:#e0e7ff;color:#1e40af;padding:3px 11px;border-radius:20px;font-weight:600}
+.sup-chip{background:#d1fae5;color:#065f46;padding:3px 11px;border-radius:20px;font-weight:600;font-size:12px}
+
+.join-btn{width:100%;padding:11px;background:#1a237e;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:.3s}
+.join-btn:hover:not(:disabled){background:#1e3a8a;transform:translateY(-2px)}
+.join-btn:disabled{background:#9ca3af;cursor:not-allowed;transform:none}
+.join-btn.cancel{background:#ef4444}
+.join-btn.cancel:hover{background:#dc2626}
+
+.empty{text-align:center;padding:50px;color:#94a3b8}
+.empty i{font-size:2rem;display:block;margin-bottom:10px}
+.spinner{text-align:center;padding:40px;color:#94a3b8}
+
+/* Voting hint */
+.vote-hint{font-size:12px;color:#64748b;margin-top:8px;padding:8px 12px;background:#f8fafc;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="container">
+    <a href="/student_dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+    <h1><i class="fa-solid fa-users"></i> Available Teams</h1>
+    <p class="sub">Send a request to join a team (max 5 members per team)</p>
+
+    <!-- Status legend (section 4 & 7) -->
+    <div class="legend">
+        <div class="leg-item"><div class="dot dot-pending"></div> Pending (&lt;3 members)</div>
+        <div class="leg-item"><div class="dot dot-active"></div>  Available (3–4 members)</div>
+        <div class="leg-item"><div class="dot dot-full"></div>    Full (5 members)</div>
+        <div class="leg-item"><div class="dot dot-expired"></div> Expired / Locked</div>
+    </div>
+
+    <div id="grid"><div class="spinner"><i class="fas fa-spinner fa-spin fa-2x"></i></div></div>
+</div>
+
+<script src="/static/api.js?v=2"></script>
+<script>
+    Auth.requireRole('student');
+    Teams.myTeam().then(t => { if (t) location.href = '/team_dashboard.html'; });
+
+    const me = getUser();
+    let allTeams = [];
+
+    function getLocalReqs()      { try { return JSON.parse(localStorage.getItem('myJoinReqs') || '[]'); } catch { return []; } }
+    function saveLocalReq(id)    { const r = getLocalReqs().filter(x => x !== id); r.push(id); localStorage.setItem('myJoinReqs', JSON.stringify(r)); }
+    function removeLocalReq(id)  { localStorage.setItem('myJoinReqs', JSON.stringify(getLocalReqs().filter(x => x !== id))); }
+
+    async function loadData() {
+        allTeams = await Teams.list();
+        render();
+        pollAccepted();
+    }
+
+    function render() {
+        const grid      = document.getElementById('grid');
+        const localReqs = getLocalReqs();
+
+        // Section 2: exclude teams the student is already in
+        const available = allTeams.filter(t =>
+            !t.members.some(m => m.id === me.id) &&
+            !['expired', 'locked'].includes(t.status)   // show only joinable teams
+        );
+
+        if (!available.length) {
+            grid.innerHTML = `<div class="empty"><i class="fas fa-circle-info"></i><p>No teams available right now.</p></div>`;
+            return;
+        }
+
+        grid.innerHTML = '';
+        available.forEach(team => {
+            const count     = Array.isArray(team.members) ? team.members.length : (team.members_count || 0);
+            const isFull    = count >= 5;
+            const isPending = localReqs.includes(team.id);
+
+            // Section 4 status label
+            const statusLabel = isFull ? 'FULL (5/5)' : count >= 3 ? 'AVAILABLE' : 'PENDING';
+            const statusClass = isFull ? 'b-full'     : count >= 3 ? 'b-active'  : 'b-pending';
+
+            let btn;
+            if (isFull) {
+                btn = `<button class="join-btn" disabled><i class="fas fa-lock"></i> Team is Full</button>`;
+            } else if (isPending) {
+                btn = `<button class="join-btn cancel" onclick="cancelReq(${team.id})"><i class="fas fa-xmark"></i> Cancel Request</button>`;
+            } else {
+                btn = `<button class="join-btn" onclick="sendReq(${team.id})"><i class="fas fa-paper-plane"></i> Request to Join</button>`;
+            }
+
+            // Voting hint (section 5)
+            const voteRule = count <= 1 ? 'Leader approval only'
+                           : count === 2 ? '100% approval required'
+                           : '75% approval required';
+
+            grid.innerHTML += `
+                <div class="team-card">
+                    <span class="badge ${statusClass}">${statusLabel}</span>
+                    <h3>${team.name}</h3>
+                    <p>${team.project_description || team.description || 'No description provided.'}</p>
+                    <div class="meta">
+                        <span class="count-chip"><i class="fas fa-users"></i> ${count}/5</span>
+                       <div style="display:flex;flex-direction:column;gap:6px">
+    <small>
+        <i class="fas fa-crown" style="color:#f59e0b"></i>
+        Leader: ${team.leader?.display_name || '—'}
+    </small>
+
+    ${
+        team.assigned_supervisor
+        ? `
+        <span class="sup-chip">
+            <i class="fas fa-chalkboard-teacher"></i>
+            Supervisor: ${team.assigned_supervisor.display_name || 'Assigned'}
+        </span>
+        `
+        : `
+        <small style="color:#94a3b8">
+            <i class="fas fa-user-slash"></i>
+            No supervisor yet
+        </small>
+        `
+    }
+</div>
+                    </div>
+                    ${btn}
+                    <div class="vote-hint"><i class="fas fa-info-circle"></i> Approval rule: ${voteRule}</div>
+                </div>`;
+        });
+    }
+
+    async function sendReq(teamId) {
+        const res = await Teams.sendJoinRequest(teamId);
+        if (res.id) { saveLocalReq(teamId); render(); }
+        else alert(res.detail || 'Could not send request.');
+    }
+
+    async function cancelReq(teamId) {
+        await Teams.cancelJoinRequest(teamId);
+        removeLocalReq(teamId);
+        render();
+    }
+
+    // Poll every 3s — redirect as soon as accepted (section 5)
+    function pollAccepted() {
+        setInterval(async () => {
+            const t = await Teams.myTeam();
+            if (t) { localStorage.setItem('currentTeam', JSON.stringify(t)); location.href = '/team_dashboard.html'; }
+        }, 3000);
+    }
+
+    loadData();
+</script>
+</body>
+</html>

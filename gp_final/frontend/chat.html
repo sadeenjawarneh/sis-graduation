@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Team Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Inter, sans-serif }
+        body { display: flex; height: 100vh; background: #f4f6fb; overflow: hidden }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background: linear-gradient(180deg,#1e3c72,#2a5298); color:#fff; padding:20px; transition:.3s; flex-shrink:0; overflow:hidden }
+        .sidebar.closed { width:0; padding:0 }
+        .side-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px }
+        .sidebar h2 { font-size:15px; margin-bottom:6px }
+        .member-count { font-size:12px; opacity:.75; margin-bottom:14px }
+        .member-item { display:flex; align-items:center; gap:10px; padding:9px; border-radius:10px; margin-bottom:6px; background:rgba(255,255,255,.1) }
+        .member-item img { width:34px; height:34px; border-radius:50% }
+        .member-name { font-size:13px }
+        .member-role { font-size:10px; opacity:.65 }
+        .open-btn { position:fixed; top:14px; left:14px; font-size:20px; color:#1e3c72; cursor:pointer; z-index:99; background:#fff; width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.12) }
+
+        /* Chat area */
+        .chat { flex:1; display:flex; flex-direction:column; overflow:hidden }
+        .chat-header { display:flex; justify-content:space-between; align-items:center; padding:14px 14px 14px 60px; background:#fff; border-bottom:1px solid #eee; flex-shrink:0 }
+        .chat-header .title b { font-size:15px; color:#1a237e }
+        .chat-header .title small { display:block; color:#64748b; font-size:11px }
+        .header-icons i { margin-left:14px; cursor:pointer; font-size:17px; color:#1e3c72 }
+
+        /* Messages */
+        .messages { flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:6px }
+        .msg { max-width:62%; padding:10px 13px; border-radius:14px; position:relative; word-break:break-word; font-size:14px; line-height:1.5 }
+        .msg.me { background:#d1fae5; margin-left:auto; border-bottom-right-radius:4px }
+        .msg.other { background:#fff; margin-right:auto; border-bottom-left-radius:4px; box-shadow:0 1px 4px rgba(0,0,0,.06) }
+        .sender { font-size:11px; font-weight:700; color:#1e3c72; margin-bottom:3px }
+        .meta { display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:4px }
+        .meta time { font-size:10px; color:#94a3b8 }
+        .meta .edited { font-size:10px; color:#94a3b8; font-style:italic }
+        .del-text { color:#aaa; font-style:italic; font-size:13px }
+        .dots-btn { position:absolute; top:6px; right:6px; cursor:pointer; font-size:13px; color:#aaa; background:none; border:none; padding:0 3px; display:none; line-height:1 }
+        .msg:hover .dots-btn { display:block }
+
+        /* Context menu */
+        .ctx-menu { position:fixed; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); z-index:1000; min-width:170px; display:none }
+        .ctx-menu div { padding:10px 14px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:8px; transition:.15s }
+        .ctx-menu div:hover { background:#f1f5f9 }
+        .ctx-menu div.danger { color:#ef4444 }
+        .ctx-menu div.danger:hover { background:#fee2e2 }
+
+        /* Input area */
+        .input-area { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border-top:1px solid #eee; flex-shrink:0 }
+        .input-area i { font-size:17px; cursor:pointer; color:#1e3c72; padding:5px }
+
+        .voice-btn-chat { font-size:17px; cursor:pointer; color:#1e3c72; background:none; border:none; outline:none; padding:5px; display:flex; align-items:center; justify-content:center; transition:color .2s }
+        .voice-btn-chat.recording { color:#ef4444; animation:pulse-mic 1.2s infinite }
+        @keyframes pulse-mic { 0%{transform:scale(1)} 50%{transform:scale(1.2)} 100%{transform:scale(1)} }
+
+        .input-area input { flex:1; padding:10px 16px; border-radius:24px; border:1px solid #d1d5db; font-family:inherit; font-size:14px; outline:none; transition:.2s }
+        .input-area input:focus { border-color:#1e3c72 }
+
+        .send-btn { background:#1e3c72; color:#fff; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.2s }
+        .send-btn:hover { background:#2a5298 }
+
+        .status-bar { padding:4px 14px; font-size:11px; background:#f0f9ff; color:#0369a1; border-bottom:1px solid #bae6fd; display:none }
+
+        audio { max-width:100%; height:36px; margin-top:4px; display:block }
+        .file-attachment-link { display:inline-flex; align-items:center; gap:8px; color:#1e3c72; font-weight:600; text-decoration:none; background:rgba(30,60,114,.08); padding:8px 12px; border-radius:8px; margin-top:4px }
+        .file-attachment-link:hover { background:rgba(30,60,114,.15) }
+
+        /* Recording indicator in input */
+        .rec-indicator { display:none; align-items:center; gap:8px; flex:1; padding:0 16px; color:#ef4444; font-size:13px; font-weight:600 }
+        .rec-indicator .rec-dot { width:10px; height:10px; border-radius:50%; background:#ef4444; animation:pulse-mic 1s infinite }
+        .rec-indicator.show { display:flex }
+    </style>
+</head>
+<body>
+
+<div class="open-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="side-top">
+        <i class="fas fa-arrow-left" style="cursor:pointer" onclick="goBack()"></i>
+        <i class="fas fa-bars" style="cursor:pointer" onclick="toggleSidebar()"></i>
+    </div>
+    <h2>Team Members</h2>
+    <div class="member-count" id="memberCount">Loading…</div>
+    <div id="memberList"></div>
+</div>
+
+<div class="chat">
+    <div class="status-bar" id="statusBar"></div>
+    <div class="chat-header">
+        <div class="title">
+            <b id="chatTitle">Team Chat</b>
+            <small id="chatSub">Connecting…</small>
+        </div>
+        <div class="header-icons">
+            <i class="fas fa-phone" title="Voice call (coming soon)"></i>
+            <i class="fas fa-video" title="Video call (coming soon)"></i>
+        </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+        <input type="file" id="fileAttachmentInput" style="display:none" onchange="uploadFileAttachment()">
+        <i class="fas fa-paperclip" title="Attach file" onclick="document.getElementById('fileAttachmentInput').click()"></i>
+
+        <!-- زر المايكروفون: ضغطة لبدء، ضغطة لإيقاف وإرسال تلقائي -->
+        <button id="voiceBtn" class="voice-btn-chat" title="Hold to record" onclick="toggleVoice()">
+            <i class="fas fa-microphone"></i>
+        </button>
+
+        <!-- مؤشر التسجيل (يظهر بدل الـ input وقت التسجيل) -->
+        <div class="rec-indicator" id="recIndicator">
+            <div class="rec-dot"></div>
+            <span id="recTimer">Recording… 0s</span>
+        </div>
+
+        <!-- الـ input الطبيعي -->
+        <input type="text" id="msgInput" placeholder="Write a message…">
+
+        <button class="send-btn" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<div class="ctx-menu" id="ctxMenu">
+    <div onclick="ctxEdit()"><i class="fas fa-pen" style="color:#1e3c72"></i> Edit</div>
+    <div onclick="ctxDeleteMe()"><i class="fas fa-eye-slash" style="color:#888"></i> Delete for me</div>
+    <div class="danger" onclick="ctxDeleteAll()"><i class="fas fa-trash"></i> Delete for everyone</div>
+</div>
+
+<script src="/static/api.js?v=2"></script>
+<script>
+    if (!GPApi.getAccess()) location.href = '/login.html';
+    const me   = GPApi.getUser();
+    const team = JSON.parse(localStorage.getItem('currentTeam') || 'null');
+    if (!team) {
+        location.href = me && me.role === 'supervisor'
+            ? '/Supervisor_dashboard.html'
+            : '/student_dashboard.html';
+    }
+
+    document.getElementById('chatTitle').textContent = team.name + ' — Chat';
+
+    // ── تحميل أعضاء الفريق من الـ API مباشرة ─────────────────────
+    async function loadMembers() {
+        try {
+            const data = await GPApi.getJson(`/teams/${team.id}/`);
+            const members = data.members_info || data.members || [];
+            const count = members.length;
+            document.getElementById('memberCount').textContent =
+                count + ' Member' + (count !== 1 ? 's' : '');
+            document.getElementById('chatSub').textContent =
+                count + ' member' + (count !== 1 ? 's' : '');
+            document.getElementById('memberList').innerHTML = members.map(m => `
+                <div class="member-item">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.display_name || m.name || 'U')}&background=1a237e&color=fff" alt="">
+                    <div>
+                        <div class="member-name">${m.display_name || m.name || 'Member'}</div>
+                        <div class="member-role">${m.id === (data.admin || team.admin) ? 'Leader' : 'Member'}</div>
+                    </div>
+                </div>`).join('');
+        } catch (e) {
+            // fallback على اللي في localStorage
+            const members = team.members_info || [];
+            document.getElementById('memberCount').textContent = members.length + ' Member(s)';
+            document.getElementById('memberList').innerHTML = members.map(m => `
+                <div class="member-item">
+                    <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(m.display_name || 'U')}&background=1a237e&color=fff" alt="">
+                    <div>
+                        <div class="member-name">${m.display_name || 'Member'}</div>
+                        <div class="member-role">${m.id === team.admin ? 'Leader' : 'Member'}</div>
+                    </div>
+                </div>`).join('');
+        }
+    }
+    loadMembers();
+
+    // ── WebSocket ─────────────────────────────────────────────────
+    let chat = null, msgMap = {};
+
+    function connectWS() {
+        setStatus('Connecting…', false);
+        chat = new TeamChat(team.id, {
+            onOpen:    ()   => setStatus('Connected', false),
+            onClose:   ()   => { setStatus('Disconnected. Reconnecting…', true); setTimeout(connectWS, 3000); },
+            onHistory: msgs => { document.getElementById('messages').innerHTML = ''; msgs.forEach(appendMsg); scrollBottom(); },
+            onMessage: msg  => { appendMsg(msg); scrollBottom(); },
+            onEdit:    data => updateMsg(data.id, data.text, true),
+            onDelete:  data => {
+                if (data.scope === 'everyone') markDeleted(data.id);
+                else removeMsg(data.id);
+            },
+        });
+        chat.connect();
+    }
+
+    function setStatus(txt, show) {
+        const bar = document.getElementById('statusBar');
+        bar.textContent = txt;
+        bar.style.display = show ? 'block' : 'none';
+    }
+
+    // ── Voice Note — أبسط تدفق: سجّل ← وقّف ← يرسل تلقائياً ────
+    let mediaRecorder = null, audioChunks = [], isRecording = false, recInterval = null, recSec = 0;
+
+    async function toggleVoice() {
+        const btn = document.getElementById('voiceBtn');
+        const inp = document.getElementById('msgInput');
+        const rec = document.getElementById('recIndicator');
+
+        if (!isRecording) {
+            // ── ابدأ التسجيل ──────────────────────────────────────
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks   = [];
+                recSec        = 0;
+
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+                mediaRecorder.onstop = async () => {
+                    // إيقاف المؤقت
+                    clearInterval(recInterval);
+                    // إخفاء مؤشر التسجيل وإظهار الـ input
+                    rec.classList.remove('show');
+                    inp.style.display = '';
+                    btn.className = 'voice-btn-chat';
+                    btn.innerHTML = '<i class="fas fa-microphone"></i>';
+
+                    // إرسال تلقائي
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await sendVoice(blob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+
+                // إظهار مؤشر التسجيل وإخفاء الـ input
+                inp.style.display = 'none';
+                rec.classList.add('show');
+                btn.className = 'voice-btn-chat recording';
+                btn.innerHTML = '<i class="fas fa-stop"></i>';
+                btn.title = 'Stop & Send';
+
+                // مؤقت
+                recInterval = setInterval(() => {
+                    recSec++;
+                    document.getElementById('recTimer').textContent = `Recording… ${recSec}s`;
+                }, 1000);
+
+            } catch (err) {
+                alert('Cannot access microphone. Please check permissions.');
+            }
+        } else {
+            // ── أوقف التسجيل ← onstop بيرسل تلقائياً ─────────────
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            isRecording = false;
+        }
+    }
+
+    async function sendVoice(blob) {
+        const formData = new FormData();
+        formData.append('file', blob, 'voice_note.webm');
+        try {
+            const res = await GPApi.apiFetch(`/chat/${team.id}/upload/`, { method: 'POST', body: formData });
+            if (res.ok) {
+                const data = await res.json();
+                if (chat) chat.send(data.file_url || '');
+            } else {
+                alert('Failed to send voice note.');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Error sending voice note.');
+        }
+    }
+
+    // ── File Attachment ───────────────────────────────────────────
+    async function uploadFileAttachment() {
+        const fileInput = document.getElementById('fileAttachmentInput');
+        if (!fileInput.files.length) return;
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        try {
+            const res = await GPApi.apiFetch(`/chat/${team.id}/upload/`, { method: 'POST', body: formData });
+            if (res.ok) {
+                const data = await res.json();
+                if (chat) chat.send(data.file_url || '');
+            } else {
+                alert('Failed to upload file.');
+            }
+        } catch (err) {
+            console.error(err);
+        }
+        fileInput.value = '';
+    }
+
+    // ── إرسال رسالة نصية ─────────────────────────────────────────
+    async function sendMsg() {
+        const inp = document.getElementById('msgInput');
+        if (!inp.value.trim() || !chat) return;
+        chat.send(inp.value.trim());
+        inp.value = '';
+    }
+
+    document.getElementById('msgInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+    });
+
+    // ── عرض الرسائل ──────────────────────────────────────────────
+    function appendMsg(m) {
+        const box   = document.getElementById('messages');
+        const isMe  = m.sender_id === me.id;
+        const time  = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const div   = document.createElement('div');
+        div.className    = `msg ${isMe ? 'me' : 'other'}`;
+        div.dataset.id   = m.id;
+        div.dataset.mine = isMe ? '1' : '0';
+        div.innerHTML    = buildMsgHTML(m.text, isMe, m.sender_name, time, m.edited, m.voice_url, m.file_url);
+        box.appendChild(div);
+        msgMap[m.id] = div;
+    }
+
+    function buildMsgHTML(text, isMe, senderName, time, edited, voiceUrl, fileUrl) {
+        let content = `<span class="body-text">${escHtml(text || '')}</span>`;
+        if (voiceUrl) {
+            content = `<audio controls src="${voiceUrl}"></audio>`;
+        } else if (fileUrl) {
+            const name = fileUrl.split('/').pop();
+            content = `<a href="${fileUrl}" target="_blank" class="file-attachment-link"><i class="fas fa-file-download"></i> ${escHtml(name)}</a>`;
+        } else if (text && (text.startsWith('http') || text.startsWith('/media/'))) {
+            if (/\.(webm|mp3|wav|ogg)/.test(text)) {
+                content = `<audio controls src="${text}"></audio>`;
+            } else {
+                const name = text.split('/').pop();
+                content = `<a href="${text}" target="_blank" class="file-attachment-link"><i class="fas fa-file-download"></i> ${escHtml(name)}</a>`;
+            }
+        }
+        return `
+            ${!isMe ? `<div class="sender">${escHtml(senderName || '')}</div>` : ''}
+            ${content}
+            <button class="dots-btn" onclick="openCtx(event,this)">⋮</button>
+            <div class="meta">
+                ${edited ? '<span class="edited">edited</span>' : ''}
+                <time>${time}</time>
+            </div>`;
+    }
+
+    function updateMsg(id, newText, edited) {
+        const div = msgMap[id];
+        if (!div) return;
+        const time = div.querySelector('time')?.textContent || '';
+        const isMe = div.dataset.mine === '1';
+        div.innerHTML = buildMsgHTML(newText, isMe, '', time, edited);
+    }
+    function markDeleted(id) { const d = msgMap[id]; if (d) d.innerHTML = '<span class="del-text">Message deleted</span>'; }
+    function removeMsg(id)    { const d = msgMap[id]; if (d) { d.remove(); delete msgMap[id]; } }
+    function scrollBottom()   { const b = document.getElementById('messages'); b.scrollTop = b.scrollHeight; }
+    function escHtml(t)       { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+    // ── Context menu ──────────────────────────────────────────────
+    let ctxTarget = null;
+    function openCtx(event, btn) {
+        event.stopPropagation();
+        ctxTarget = btn.closest('.msg');
+        const menu  = document.getElementById('ctxMenu');
+        const isMe  = ctxTarget.dataset.mine === '1';
+        menu.children[0].style.display = isMe ? 'flex' : 'none';
+        menu.children[2].style.display = isMe ? 'flex' : 'none';
+        menu.style.left    = event.pageX + 'px';
+        menu.style.top     = event.pageY + 'px';
+        menu.style.display = 'block';
+    }
+    document.addEventListener('click', () => { document.getElementById('ctxMenu').style.display = 'none'; });
+    function ctxEdit()      { if (!ctxTarget) return; const t = ctxTarget.querySelector('.body-text')?.textContent || ''; const n = prompt('Edit message:', t); if (n?.trim()) chat.edit(+ctxTarget.dataset.id, n.trim()); }
+    function ctxDeleteMe()  { if (ctxTarget) chat.deleteForMe(+ctxTarget.dataset.id); }
+    function ctxDeleteAll() { if (ctxTarget) chat.deleteForEveryone(+ctxTarget.dataset.id); }
+
+    // ── Misc ──────────────────────────────────────────────────────
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('closed'); }
+    function goBack()        { location.href = me.role === 'supervisor' ? '/Supervisor_dashboard.html' : '/team_dashboard.html'; }
+
+    // ── Start ─────────────────────────────────────────────────────
+    connectWS();
+</script>
+</body>
+</html>

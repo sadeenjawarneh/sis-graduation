@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Supervisor Request</title>
+{% load static %}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root{
+    --main:#4f46e5;
+    --dark:#3730a3;
+    --text:#0f172a;
+    --sub:#64748b;
+    --border:#e5e7eb;
+}
+
+body{
+    font-family:Inter;
+    background:#f3f4f6;
+    padding:40px;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar{
+    position:fixed;
+    top:0;
+    left:-260px;
+    width:240px;
+    height:100%;
+    background:linear-gradient(180deg,#1e3c72,#2a5298);
+    padding:20px;
+    transition:0.3s;
+    z-index:1000;
+    color:#fff;
+}
+
+.sidebar a{
+    display:block;
+    color:#fff;
+    text-decoration:none;
+    padding:10px;
+    margin-top:10px;
+    border-radius:8px;
+    font-size:14px;
+}
+
+.sidebar a:hover{
+    background:rgba(255,255,255,0.2);
+}
+
+.close{
+    color:#fff;
+    font-size:18px;
+    cursor:pointer;
+    margin-bottom:10px;
+}
+
+/* menu button */
+.menu-btn{
+    position:fixed;
+    top:20px;
+    left:20px;
+    font-size:20px;
+    cursor:pointer;
+    color:var(--main);
+    z-index:1100;
+}
+
+/* ================= MAIN ================= */
+.container{
+    max-width:800px;
+    margin:auto;
+    background:#fff;
+    padding:35px;
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+h2{
+    text-align:center;
+    color:var(--text);
+}
+
+h3{
+    margin-top:25px;
+    color:var(--text);
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:#fafafa;
+}
+
+input:focus{
+    border-color:var(--main);
+    outline:none;
+    background:#fff;
+    box-shadow:0 0 0 3px rgba(79,70,229,0.1);
+}
+
+button{
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:500;
+}
+
+.add{
+    background:var(--dark);
+    color:#fff;
+    width:100%;
+    padding:12px;
+    margin-top:12px;
+}
+
+.add:hover{
+    background:#312e81;
+}
+
+.green{
+    background:#16a34a;
+    color:#fff;
+    width:100%;
+    padding:12px;
+}
+
+/* FILE */
+.file-box{
+    margin-top:10px;
+}
+
+.file-btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:14px;
+    border:1px dashed var(--border);
+    border-radius:12px;
+    background:#fafafa;
+    cursor:pointer;
+    color:var(--sub);
+}
+
+.file-btn input{
+    display:none;
+}
+
+/* STUDENTS */
+.student{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px;
+    margin-top:12px;
+    border:1px solid var(--border);
+    border-radius:14px;
+}
+
+.student:hover{
+    box-shadow:0 6px 18px rgba(0,0,0,0.06);
+}
+
+.actions{
+    display:flex;
+    gap:8px;
+}
+
+.icon-btn{
+    width:36px;
+    height:36px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:8px;
+    background:#f1f5f9;
+}
+
+.icon-btn:hover{
+    background:#e2e8f0;
+}
+
+.delete-btn{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.counter{
+    font-size:13px;
+    color:var(--sub);
+}
+
+.msg{
+    color:#dc2626;
+    font-size:13px;
+    margin-top:8px;
+}
+</style>
+</head>
+<body>
+
+<div class="menu-btn" onclick="toggleMenu()">
+    <i class="fa fa-bars"></i>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <div class="close" onclick="toggleMenu()">
+        <i class="fa fa-xmark"></i>
+    </div>
+    <a href="/team_dashboard.html"><i class="fa fa-house"></i> Dashboard</a>
+    <a href="/chat.html"><i class="fa fa-comments"></i> Chat</a>
+    <a href="/supervisor-request.html"><i class="fa fa-user-plus"></i> Supervisor Requests</a>
+</div>
+
+<div class="container">
+
+    <h2><i class="fa-solid fa-user-graduate"></i> Supervisor Request</h2>
+
+    <h3>Team Members</h3>
+    <div class="counter" id="counter">0 / 5 Students</div>
+    <div id="students"></div>
+
+    <input id="name" placeholder="Student Name">
+    <input id="id" placeholder="University ID">
+    <input id="gpa" placeholder="GPA (optional)">
+
+    <button class="add" onclick="addStudent()">
+        <i class="fa fa-plus"></i> Add Student
+    </button>
+
+    <p class="msg" id="msg"></p>
+
+    <h3>Attach Project Idea (optional)</h3>
+    <div class="file-box">
+        <label class="file-btn" id="fileLabel">
+            <i class="fa fa-upload"></i> <span id="fileNameText">Choose File</span>
+            <input type="file" id="projectFile" accept=".pdf,.doc,.docx,.txt" onchange="handleFileSelect()">
+        </label>
+    </div>
+
+    <h3>Supervisor</h3>
+
+<button class="add" onclick="goChooseSupervisor()">
+    <i class="fa fa-search"></i> Choose Supervisor
+</button>
+
+<br><br>
+
+    <button class="green" onclick="sendFinalSupervisorRequest()">
+        <i class="fa fa-paper-plane"></i> Send Request
+    </button>
+</div>
+
+<script src="/static/api.js?v=2"></script>
+<script>
+/* ================= AUTH CHECK ================= */
+if (!GPApi.getAccess()) location.href = '/login.html';
+
+let currentTeam = null;
+const me = GPApi.getUser();
+
+async function checkLeadership() {
+    try {
+        const team = await Teams.myTeam();
+        if (!team) {
+            showLeaderError('You are not in any team yet. Please create or join a team first.');
+            return;
+        }
+        currentTeam = team;
+
+        if (team.assigned_supervisor) {
+            showLeaderError(
+                'Your team already has an assigned supervisor: <strong>' +
+                (team.assigned_supervisor.display_name || 'Supervisor') +
+                '</strong>. You cannot send another request.'
+            );
+            return;
+        }
+
+        if (!team.leader || team.leader.id !== me.id) {
+            showLeaderError(
+                'Only the <strong>Team Leader</strong> can send supervisor requests.<br>' +
+                'Team leader is: <strong>' + (team.leader?.display_name || '—') + '</strong>'
+            );
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function showLeaderError(msg) {
+    const container = document.querySelector('.container');
+    container.insertAdjacentHTML('afterbegin',
+        '<div id="leaderBanner" style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:14px 18px;border-radius:12px;margin-bottom:18px;font-size:14px;line-height:1.6">' +
+        '<i class="fa fa-circle-exclamation"></i> ' + msg + '</div>'
+    );
+    // Disable the send button
+    const sendBtn = document.querySelector('.green');
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.style.opacity = '0.5'; sendBtn.style.cursor = 'not-allowed'; }
+}
+
+checkLeadership();
+
+/* ================= SIDEBAR ================= */
+function toggleMenu(){
+    let bar = document.getElementById("sidebar");
+    if(bar.style.left === "0px"){
+        bar.style.left = "-260px";
+    }else{
+        bar.style.left = "0px";
+    }
+}
+
+/* ================= STUDENTS ================= */
+let students=[];
+let editIndex=-1;
+
+function addStudent(){
+    let nameInput = document.getElementById("name");
+    let idInput = document.getElementById("id");
+    let gpaInput = document.getElementById("gpa");
+    let msg = document.getElementById("msg");
+
+    let name = nameInput.value.trim();
+    let id = idInput.value.trim();
+    let gpa = gpaInput.value.trim();
+
+    if(!name || !id){
+        msg.innerText="⚠️ Fill name and ID";
+        return;
+    }
+
+    let data={name, id, gpa: gpa || "N/A"};
+
+    if(editIndex===-1){
+        if(students.length>=5){
+            msg.innerText="❌ Max 5 students";
+            return;
+        }
+        students.push(data);
+    }else{
+        students[editIndex]=data;
+        editIndex=-1;
+    }
+
+    msg.innerText="";
+    nameInput.value="";
+    idInput.value="";
+    gpaInput.value="";
+    render();
+}
+
+function editStudent(i){
+    let s=students[i];
+    document.getElementById("name").value=s.name;
+    document.getElementById("id").value=s.id;
+    document.getElementById("gpa").value=(s.gpa==="N/A")?"":s.gpa;
+    editIndex=i;
+}
+
+function deleteStudent(i){
+    students.splice(i,1);
+    render();
+}
+
+function render(){
+    let box=document.getElementById("students");
+    box.innerHTML="";
+
+    students.forEach((s,i)=>{
+        box.innerHTML+=`
+        <div class="student">
+            <div>
+                <b>${s.name}</b><br>
+                <span style="color:#64748b;font-size:13px;">
+                ID: ${s.id} • GPA: ${s.gpa}
+                </span>
+            </div>
+            <div class="actions">
+                <div class="icon-btn" onclick="editStudent(${i})">
+                    <i class="fa fa-pen"></i>
+                </div>
+                <div class="icon-btn delete-btn" onclick="deleteStudent(${i})">
+                    <i class="fa fa-trash"></i>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById("counter").innerText=students.length+" / 5 Students";
+}
+
+/* ================= FILE UPLOAD HANDLING ================= */
+let selectedFile = null;
+
+function handleFileSelect() {
+    const fileInput = document.getElementById("projectFile");
+    const fileNameText = document.getElementById("fileNameText");
+    const fileLabel = document.getElementById("fileLabel");
+
+    if (fileInput.files.length > 0) {
+        selectedFile = fileInput.files[0];
+        const fileSize = (selectedFile.size / 1024).toFixed(1); 
+        fileNameText.innerText = `${selectedFile.name} (${fileSize} KB)`;
+        
+        fileLabel.style.borderColor = "var(--main)";
+        fileLabel.style.background = "#f0fdf4"; 
+    } else {
+        selectedFile = null;
+        fileNameText.innerText = "Choose File";
+        fileLabel.style.borderColor = "var(--border)";
+        fileLabel.style.background = "#fafafa";
+    }
+}
+
+async function sendFinalSupervisorRequest() {
+
+    const selectedPreferences = JSON.parse(
+        localStorage.getItem('selectedSupervisors') || 'null'
+    );
+    // fallback: old single-supervisor key
+    const legacySup = JSON.parse(localStorage.getItem('selectedSupervisor') || 'null');
+    const preferences = selectedPreferences || (legacySup ? [legacySup.id] : null);
+
+    if (!preferences || preferences.length === 0) {
+        alert("Please choose at least one supervisor first.");
+        return;
+    }
+
+    if (!GPApi.getAccess()) {
+        alert("You are not logged in.");
+        window.location.href = '/login.html';
+        return;
+    }
+
+    const payload = {
+        project_idea: selectedFile ? selectedFile.name : "Graduation Project",
+        preferences: preferences
+    };
+
+    try {
+        const res = await GPApi.apiFetch('/requests/create/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+            alert("Request sent successfully!");
+            localStorage.removeItem('supervisorRequestDraft');
+            localStorage.removeItem('selectedSupervisor');
+            localStorage.removeItem('selectedSupervisors');
+            window.location.href = '/team_dashboard.html';
+        } else {
+            const errMsg = data.error || data.detail || `Request failed (${res.status}). Make sure you are the team leader.`;
+            alert(errMsg);
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert("Network error. Please try again.");
+    }
+}
+
+function goChooseSupervisor() {
+
+    const requestData = {
+        students: students,
+        selectedFileName: selectedFile ? selectedFile.name : ''
+    };
+
+    localStorage.setItem(
+        'supervisorRequestDraft',
+        JSON.stringify(requestData)
+    );
+
+    location.href = '/supervisors_list.html';
+}
+
+const savedDraft = JSON.parse(
+    localStorage.getItem('supervisorRequestDraft') || '{}'
+);
+
+if (savedDraft.students) {
+    students = savedDraft.students;
+}
+
+render();
+
+if (savedDraft.selectedFileName) {
+    document.getElementById("fileNameText").innerText =
+        savedDraft.selectedFileName;
+}
+render();
+</script>
+</body>
+</html>

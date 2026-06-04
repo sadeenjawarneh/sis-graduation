@@ -1,0 +1,609 @@
+/**
+ * styles.css — GP System Shared Stylesheet (LTR / English / Light Theme)
+ *
+ * This file provides:
+ *  - CSS custom properties (design tokens) used everywhere for consistent colors/fonts
+ *  - A reset so all elements start with zero margin, padding, and border-box sizing
+ *  - Layout utilities: sidebar + main-content flex row, 2-column grid
+ *  - Reusable component styles: cards, buttons, forms, tables, alerts, badges, etc.
+ *  - Page-specific styles for the login page, grading reports, schedule, notifications
+ *
+ * Fonts are loaded from Google Fonts (Inter) and icons from Font Awesome 6.
+ */
+
+/* ── External fonts ──────────────────────────────────────────────────────────── */
+/* Inter — primary UI font; weights 400 (regular), 500 (medium), 600 (semi-bold), 700 (bold) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Font Awesome 6 — icon library used for sidebar icons, file icons, refresh icon, etc. */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+
+/* ── Design tokens (CSS custom properties) ───────────────────────────────────── */
+/**
+ * These variables are the single source of truth for the app's visual language.
+ * Changing a variable here updates every component that uses it.
+ *
+ *   --bg         : page background (light grey-blue)
+ *   --surface    : card / panel background (white)
+ *   --surface2   : secondary surface (off-white) for nested elements
+ *   --border     : divider / input border color (light grey)
+ *   --text       : primary body text (near-black)
+ *   --muted      : secondary / placeholder text (medium grey)
+ *   --accent     : interactive blue — buttons, links, focus rings
+ *   --accent-dim : darker blue for button hover states
+ *   --success    : green for success actions / badges
+ *   --danger     : red for destructive actions / error alerts
+ *   --radius     : default border-radius for cards and containers
+ *   --font       : font stack starting with Inter
+ */
+:root {
+  --bg:          #f4f6fb;
+  --surface:     #ffffff;
+  --surface2:    #f8fafc;
+  --border:      #e2e8f0;
+  --text:        #0f172a;
+  --muted:       #64748b;
+  --accent:      #2563eb;
+  --accent-dim:  #1d4ed8;
+  --success:     #22c55e;
+  --danger:      #ef4444;
+  --radius:      12px;
+  --font:        'Inter', 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+
+
+/* ── Global reset ────────────────────────────────────────────────────────────── */
+/* Remove default browser margins and padding; use border-box so padding/border
+   don't increase element dimensions beyond what is declared. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Set the base font size to 16 px so 1 rem = 16 px throughout the app */
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  direction: ltr;      /* Left-to-right reading order (English layout) */
+  min-height: 100vh;   /* Body always fills the full viewport height */
+}
+
+/* Default link style — accent blue, no underline; underline appears on hover */
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+
+/* ── Layout — sidebar + content flex row ─────────────────────────────────────── */
+/**
+ * .layout wraps the page in a horizontal flex container.
+ * Children:  #supervisor-sidebar (fixed width) + main.main-content (fluid)
+ */
+.layout { display: flex; min-height: 100vh; }
+
+/* Sidebar panel — fixed 260 px wide, dark blue gradient, full height */
+#supervisor-sidebar {
+  width: 260px;
+  flex-shrink: 0;                                       /* never shrink below 260 px */
+  background: linear-gradient(180deg, #1e3c72, #2a5298); /* dark navy → medium blue */
+  color: #fff;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 100vh;
+}
+
+/* ── Sidebar: profile block ─────────────────────────────────────────────────── */
+/* Row at the top of the sidebar showing the supervisor's avatar and name */
+.sv-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  cursor: default;
+}
+
+/* Circular avatar image with a subtle white border ring */
+.sv-profile img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.25);
+  object-fit: cover;   /* crop image to fill the circle without distorting */
+  flex-shrink: 0;      /* prevent the avatar from squishing when the name is long */
+}
+
+/* Supervisor's display name — prominent white bold text */
+.sv-profile .sv-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+/* Role label underneath the name — smaller and dim white */
+.sv-profile .sv-role {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,.65);
+}
+
+/* ── Sidebar: navigation links ──────────────────────────────────────────────── */
+/* Flex column holding all nav anchors; flex:1 pushes logout to the bottom */
+.side-nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+/* Individual nav link — icon + label with rounded hover background */
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  color: rgba(255,255,255,.85);
+  text-decoration: none !important;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+/* Fixed icon width so all labels align regardless of icon character width */
+.side-link i { width: 16px; text-align: center; }
+
+/* Hover and active (current page) state — translucent white highlight */
+.side-link:hover,
+.side-link.active {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+  text-decoration: none !important;
+}
+
+/* ── Sidebar: unread notification count badge ─────────────────────────────── */
+/* Small red pill shown on the Notifications link when count > 0 */
+.badge {
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;   /* fully rounded pill */
+  background: #ef4444;    /* red — draws attention to unread items */
+  color: #fff;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;      /* push badge to the far right of the link row */
+  margin-right: 0;
+}
+
+/* ── Sidebar: logout link ────────────────────────────────────────────────────── */
+/* Distinctive salmon/red color to visually separate logout from navigation */
+.side-logout {
+  color: #ff8a80 !important;
+  margin-top: 12px;        /* extra gap above logout to separate it from nav items */
+}
+
+/* ── Main content area ───────────────────────────────────────────────────────── */
+/* Takes all remaining horizontal space; horizontal scroll on small screens */
+main.main-content { flex: 1; padding: 30px 40px; overflow-x: auto; }
+
+
+/* ── Top bar ─────────────────────────────────────────────────────────────────── */
+/**
+ * .top-bar — row at the top of a page containing the page title and user pill.
+ * Uses flex with wrap so it collapses gracefully on narrow screens.
+ */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+/* Page heading inside the top bar */
+.top-bar h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+
+/* Small "logged in as" text shown on the right side of the top bar */
+.user-pill { font-size: 0.9rem; color: var(--muted); }
+
+
+/* ── Card component ──────────────────────────────────────────────────────────── */
+/**
+ * .card — white rounded container with a soft shadow.
+ * Used to group related content sections across all supervisor pages.
+ */
+.card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 20px 25px;
+  margin-bottom: 1rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,.05);
+}
+.card h2 { margin: 0 0 1rem; font-size: 1.1rem; font-weight: 700; }
+.card h3 { margin: 0 0 .75rem; font-size: 1rem; font-weight: 600; }
+
+
+/* ── Stats grid ──────────────────────────────────────────────────────────────── */
+/**
+ * .grid-3 — responsive grid for dashboard stat cards.
+ * Columns auto-fill at a minimum of 200 px each — collapses to fewer columns
+ * as the viewport narrows.
+ */
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Individual stat card — centered number + label */
+.stat {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,.05);
+}
+/* Large accent-colored number (e.g. "5 teams") */
+.stat .num { font-size: 1.75rem; font-weight: 700; color: var(--accent); }
+/* Small muted label below the number (e.g. "Teams Supervised") */
+.stat .lbl { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+
+
+/* ── Buttons ─────────────────────────────────────────────────────────────────── */
+/**
+ * .btn — base button style shared by all variants.
+ * Variants are applied as additional classes: .btn-primary, .btn-success, etc.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;            /* space between icon and label if both are present */
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: opacity 0.15s;
+}
+/* Disabled state — reduced opacity and non-interactive cursor */
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Blue primary action button (e.g. Submit, Save, Mark All Read) */
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-dim); }
+
+/* Green success button (e.g. Approve, Find & Book, Add Slot) */
+.btn-success { background: #059669; color: #fff; }
+.btn-success:hover:not(:disabled) { background: #047857; }
+
+/* Red danger button (e.g. Delete, Reject) */
+.btn-danger  { background: #dc2626; color: #fff; }
+.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+
+/* Ghost button — transparent with a border (e.g. Refresh, secondary actions) */
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--muted); }
+
+/* Utility modifiers */
+.full    { width: 100%; }    /* make a button fill its container */
+.mt-auto { margin-top: auto; } /* push an element to the bottom of a flex column */
+
+
+/* ── Forms ───────────────────────────────────────────────────────────────────── */
+/**
+ * .form-row — horizontal flex row for inline form fields (label + input pairs).
+ * Wraps to a new line on narrow screens.
+ */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+/* Label inside a .form-row — stacks its text above the input */
+.form-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Standalone label (outside a .form-row) — block element with top/bottom margin */
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
+/* Base styles for all text inputs, dropdowns, and textareas */
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;                     /* fill the parent container by default */
+  transition: border-color 0.15s;
+}
+/* Blue border on focus to indicate the active field */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+/* Textarea minimum height; user can drag to resize vertically */
+textarea { min-height: 80px; resize: vertical; }
+
+
+/* ── Tables ──────────────────────────────────────────────────────────────────── */
+/**
+ * .table-wrap — wrapper that enables horizontal scrolling on narrow screens
+ * so the table never overflows its parent card.
+ */
+.table-wrap { overflow-x: auto; }
+
+/* Full-width table with collapsed borders (no double lines between cells) */
+table, table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+/* Cell padding and left-aligned text for LTR layout; bottom border as row divider */
+th, td,
+table.data th, table.data td {
+  padding: 12px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Column headers — uppercase, muted color, smaller font */
+th, table.data th {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+
+/* ── Alerts ──────────────────────────────────────────────────────────────────── */
+/**
+ * .alert — inline feedback message displayed inside a page after an action.
+ * Shown/hidden by JavaScript; uses color variants for success vs. error.
+ */
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+/* Red alert for errors (API failure, validation error) */
+.alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+/* Green alert for successful actions (saved, deleted, booked, etc.) */
+.alert-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+
+/* ── Status box (used on schedule / booking pages) ───────────────────────────── */
+/**
+ * .status-box — small inline result box shown after a booking or slot action.
+ * Hidden by default (display: none); made visible by JS when a result is ready.
+ */
+.status-box {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  display: none;
+}
+/* Cyan/teal success variant */
+.status-ok  { background: #ecfeff; border: 1px solid #a5f3fc; color: #0f766e; }
+/* Red error variant */
+.status-err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+
+/* ── Misc utilities ──────────────────────────────────────────────────────────── */
+/* Muted helper text — lighter color and slightly smaller font */
+.muted   { color: var(--muted); font-size: 0.9rem; }
+
+/* Flex row for grouping action buttons with small gaps between them */
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+
+/* ── Team block (My Teams page) ──────────────────────────────────────────────── */
+/**
+ * .team-block — card-like container for each team shown on the My Teams page.
+ * Shows team name, member list, progress bar, exam date input, and comment area.
+ */
+.team-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: var(--surface);
+  box-shadow: 0 4px 10px rgba(0,0,0,.04);
+}
+/* Team name heading inside the block */
+.team-block h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+
+
+/* ── Progress bar ────────────────────────────────────────────────────────────── */
+/**
+ * .progress — track bar used to display task completion percentage.
+ * .progress-bar — green fill; width is set inline (e.g. style="width:60%").
+ */
+.progress {
+  background: var(--border);
+  border-radius: 999px;  /* fully rounded ends */
+  height: 10px;
+  overflow: hidden;      /* clip the fill bar to the track's rounded shape */
+  margin: 12px 0;
+}
+.progress-bar { height: 100%; background: var(--success); border-radius: 999px; }
+
+
+/* ── 2-column grid layout (schedule + grading pages) ────────────────────────── */
+/**
+ * .layout-2 — side-by-side grid: left column for forms, right for results/lists.
+ * Collapses to single column on screens narrower than 900 px.
+ */
+.layout-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 900px) { .layout-2 { grid-template-columns: 1fr; } }
+
+
+/* ── Availability slot items (Schedule page) ─────────────────────────────────── */
+/**
+ * .slot-item — one row in the "My Availability Slots" list.
+ * Shows date, time range, mode, and open/closed status.
+ * Delete button is positioned on the right via justify-content: space-between.
+ */
+.slot-item {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/* Green text for slots that are still open for booking */
+.slot-open   { color: #166534; font-weight: 600; }
+/* Red text for slots that are already filled / closed */
+.slot-closed { color: #b91c1c; font-weight: 600; }
+
+
+/* ── Generic list item (Notifications page) ──────────────────────────────────── */
+/**
+ * .item — white rounded card for a single notification or list entry.
+ * .item.unread — highlighted with a blue border and light blue background
+ *                to distinguish unread notifications.
+ */
+.item {
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 12px 15px;
+  margin-bottom: 8px;
+}
+/* Unread notification highlight — blue left accent */
+.item.unread { border-color: #93c5fd; background: #eff6ff; }
+
+/* Inner flex row: content on left, action buttons on right */
+.item .row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+/* Notification title — bold dark text */
+.item .title { font-weight: 700; font-size: 14px; color: var(--text); }
+/* Metadata line — timestamp, type, team name in muted smaller text */
+.item .meta  { color: var(--muted); font-size: 12px; }
+/* Body of the notification message */
+.item .msg   { margin-top: 8px; font-size: 13px; color: var(--text); }
+
+
+/* ── Grading report items ────────────────────────────────────────────────────── */
+/**
+ * .report-item — card for a previously saved grading report in the list.
+ * Shows team name, grade values, and final grade.
+ */
+.report-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--surface2);
+}
+.report-item h4 { font-size: 14px; margin-bottom: 4px; }
+.report-item p  { font-size: 12px; color: var(--muted); }
+
+/**
+ * .final-box — highlighted box inside the grading form that shows the
+ * computed final grade preview (chief 50% + examiners 25% each).
+ */
+.final-box {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #eff6ff;       /* light blue background to draw attention */
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;            /* dark navy text for contrast */
+  font-weight: 600;
+}
+
+
+/* ── Login page ──────────────────────────────────────────────────────────────── */
+/**
+ * .login-page — full-viewport centered flex container for the login screen.
+ * Provides a subtle gradient background distinct from the app's normal --bg color.
+ */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(to bottom, #e6f3ff, #f7f9fc);
+}
+
+/**
+ * .login-card — white centered panel holding the logo, form, and error messages.
+ * Max-width prevents it from spreading too wide on large monitors.
+ */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  padding: 2rem;
+  text-align: center;
+}
+/* University logo image at the top of the card */
+.login-card img.logo { width: 90px; margin-bottom: -20px; }
+/* Application title below the logo */
+.login-card h1 { margin: 0 0 0.4rem; font-size: 1.3rem; color: #1a237e; }
+/* Subtitle / tagline below the main heading */
+.login-card .sub { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.88rem; }
+/* Field labels inside the login card — left-aligned to match the input fields */
+.login-card label {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-align: left;
+}
+/* Inputs inside the card — add a top margin to separate them from their label */
+.login-card input { margin-top: 0.35rem; }
+
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+/**
+ * .empty-state — centered muted placeholder shown when a list has no items
+ * (e.g. "No files to display", "No pending requests at the moment").
+ */
+.empty-state { color: var(--muted); padding: 2rem; text-align: center; }

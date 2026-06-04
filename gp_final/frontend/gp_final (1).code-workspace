@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../gp_system_v2"
+		},
+		{
+			"path": "../../../Admin"
+		}
+	],
+	"settings": {}
+}

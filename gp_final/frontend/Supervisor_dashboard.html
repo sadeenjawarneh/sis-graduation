@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Supervisor Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { display: flex; background: #f4f6fb; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 260px; flex-shrink: 0;
+      background: linear-gradient(180deg, #1e3c72, #2a5298);
+      color: #fff; min-height: 100vh; padding: 30px 20px;
+      display: flex; flex-direction: column;
+    }
+    .profile { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; cursor: pointer; }
+    .profile img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.2); }
+    .profile h3 { font-size: 0.95rem; font-weight: 700; }
+    .profile span { font-size: 0.78rem; color: rgba(255,255,255,.65); }
+    .menu { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .menu a {
+      color: rgba(255,255,255,.85); text-decoration: none;
+      padding: 12px 15px; border-radius: 8px;
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; font-size: 0.875rem;
+      transition: background 0.15s;
+    }
+    .menu a.active, .menu a:hover { background: rgba(255,255,255,.15); color: #fff; }
+    .menu a i { width: 16px; text-align: center; }
+    .menu .logout { color: #ff8a80 !important; margin-top: 12px; }
+
+    /* Unread badge in sidebar */
+    .nav-badge {
+      min-width: 1.25rem; height: 1.25rem; padding: 0 0.3rem;
+      border-radius: 999px; background: #ef4444; color: #fff;
+      font-size: 0.7rem; display: none; align-items: center;
+      justify-content: center; margin-left: auto;
+    }
+
+    /* ── Main ── */
+    .main { flex: 1; padding: 30px 40px; overflow-x: auto; }
+
+    /* Top bar */
+    .topbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 1rem;
+    }
+    .topbar h1 { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+    .topbar-right { display: flex; align-items: center; gap: 18px; }
+
+    /* Notification bell */
+    .notif-wrap { position: relative; cursor: pointer; }
+    .notif-wrap .bell-icon { font-size: 18px; color: #475569; }
+    .notif-badge {
+      position: absolute; top: -6px; right: -6px;
+      background: #ef4444; color: #fff; font-size: 10px;
+      padding: 2px 5px; border-radius: 10px; display: none;
+    }
+    .notif-dropdown {
+      position: absolute; top: 32px; right: 0;
+      width: 320px; max-height: 280px; overflow-y: auto;
+      background: #fff; border-radius: 10px;
+      border: 1px solid #eee; box-shadow: 0 10px 25px rgba(0,0,0,.1);
+      display: none; z-index: 1000;
+    }
+    .notif-item { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #475569; }
+
+    /* Stat cards row */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 1.25rem;
+      text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,.05);
+    }
+    .stat-card .num { font-size: 1.75rem; font-weight: 700; color: #2563eb; }
+    .stat-card .lbl { font-size: 0.82rem; color: #64748b; margin-top: 0.3rem; }
+
+    /* Summary cards */
+    .card {
+      background: #fff; border-radius: 14px; padding: 20px 25px;
+      margin-bottom: 20px; box-shadow: 0 10px 25px rgba(0,0,0,.05);
+    }
+    .card-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .card p { font-size: 0.875rem; color: #64748b; }
+
+    .btn {
+      background: #2563eb; color: #fff; border: 0;
+      padding: 10px 18px; border-radius: 8px; cursor: pointer;
+      font-size: 0.875rem; font-weight: 600; transition: background 0.15s;
+      text-decoration: none; display: inline-block;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn-ghost {
+      background: transparent; color: #64748b;
+      border: 1px solid #e2e8f0; padding: 10px 18px;
+      border-radius: 8px; cursor: pointer; font-size: 0.875rem;
+      font-weight: 600; transition: all 0.15s; text-decoration: none;
+      display: inline-block;
+    }
+    .btn-ghost:hover { color: #0f172a; border-color: #94a3b8; }
+
+    .progress { background: #e5e7eb; border-radius: 20px; height: 10px; margin: 14px 0 8px; overflow: hidden; }
+    .progress-bar { width: 0%; background: #22c55e; height: 100%; transition: width 0.5s; }
+
+    .actions-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+
+    .alert-error {
+      background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+      padding: 10px 14px; border-radius: 12px; margin-bottom: 1rem;
+      font-size: 0.9rem; display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+  <div class="profile" onclick="document.getElementById('imageInput').click()" title="Click to change avatar">
+    <img id="supAvatar" src="https://ui-avatars.com/api/?name=S&background=ffffff&color=1e3c72" alt="avatar" />
+    <div>
+      <h3 id="supName">Supervisor</h3>
+      <span>Supervisor</span>
+    </div>
+    <input type="file" id="imageInput" hidden accept="image/*" />
+  </div>
+
+  <nav class="menu">
+    <a class="active" href="/Supervisor_dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="/supervisor_student_requests.html"><i class="fas fa-user-graduate"></i> Student Requests</a>
+    <a href="/supervisor_my_teams.html"><i class="fas fa-users"></i> My Teams</a>
+    <a href="/supervisor_schedule_discussions.html"><i class="fas fa-calendar-alt"></i> Schedule Discussions</a>
+    <a href="/supervisor_grading_reports.html"><i class="fas fa-file-alt"></i> Grading &amp; Reports</a>
+    <a href="/supervisor_files.html"><i class="fas fa-folder-open"></i> Project Files</a>
+    <a href="/supervisor_notifications.html">
+      <i class="fas fa-bell"></i> Notifications
+      <span class="nav-badge" id="nav-unread-badge"></span>
+    </a>
+    <a class="logout" id="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </nav>
+</aside>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <div class="topbar">
+    <h1>Dashboard</h1>
+    <div class="topbar-right">
+      <!-- Notification bell dropdown -->
+      <div class="notif-wrap" id="notifBtn">
+        <i class="far fa-bell bell-icon"></i>
+        <span class="notif-badge" id="notifBadge"></span>
+        <div class="notif-dropdown" id="notifBox">
+          <div id="notifList"><div class="notif-item">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="dash-error" class="alert-error"></div>
+
+  <!-- Stat counters -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="num" id="s-requests">—</div><div class="lbl">Pending Requests</div></div>
+    <div class="stat-card"><div class="num" id="s-teams">—</div><div class="lbl">Supervised Teams</div></div>
+    <div class="stat-card"><div class="num" id="s-meetings">—</div><div class="lbl">Upcoming Meetings</div></div>
+    <div class="stat-card"><div class="num" id="s-unread">—</div><div class="lbl">Unread Notifications</div></div>
+  </div>
+
+  <!-- Requests card -->
+  <div class="card">
+    <div class="card-row">
+      <div>
+        <h3>New Team Requests</h3>
+        <p id="requestText">Loading…</p>
+      </div>
+      <a class="btn" href="/supervisor_student_requests.html">View Requests</a>
+    </div>
+  </div>
+
+  <!-- Teams card -->
+  <div class="card">
+    <div class="card-row">
+      <div>
+        <h3>Assigned Teams</h3>
+        <p id="teamSummary">Loading…</p>
+      </div>
+      <a class="btn" href="/supervisor_my_teams.html">View Teams</a>
+    </div>
+    <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+    <p id="nextMeetingText" style="font-size:0.85rem;color:#64748b;">Next Meeting: —</p>
+  </div>
+
+  <!-- Quick actions -->
+  <div class="card">
+    <h3 style="margin-bottom:1rem;">Quick Actions</h3>
+    <div class="actions-row">
+      <a class="btn" href="/supervisor_student_requests.html">Review Requests</a>
+      <a class="btn-ghost" href="/supervisor_schedule_discussions.html">Schedule Discussion</a>
+      <a class="btn-ghost" href="/supervisor_grading_reports.html">Enter Grades</a>
+    </div>
+  </div>
+
+</main>
+
+<script src="/static/api.js?v=2"></script>
+<script>
+  (async function () {
+    // ── Auth guard ──
+    const user = GPApi.getUser();
+    if (!GPApi.getAccess() || !user || user.role !== 'supervisor') {
+      location.href = '/login.html';
+      return;
+    }
+
+    const displayName = user.display_name || user.email;
+    document.getElementById('supName').textContent = displayName;
+
+    // Avatar: restore saved or generate initials
+    const savedImg = localStorage.getItem('profileImg_' + user.email);
+    document.getElementById('supAvatar').src = savedImg ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ffffff&color=1e3c72`;
+
+    // Avatar upload
+    document.getElementById('imageInput').onchange = function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        localStorage.setItem('profileImg_' + user.email, ev.target.result);
+        document.getElementById('supAvatar').src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Logout
+    document.getElementById('btn-logout').onclick = async () => {
+      await GPApi.logout();
+      location.href = '/login.html';
+    };
+
+    // ── Notification dropdown ──
+    async function loadNotifDropdown() {
+      try {
+        const [rows, { unread_count }] = await Promise.all([
+          GPApi.notifications(false),
+          GPApi.notifUnreadCount(),
+        ]);
+
+        const badge = document.getElementById('notifBadge');
+        const navBadge = document.getElementById('nav-unread-badge');
+        if (unread_count > 0) {
+          badge.textContent = unread_count;
+          badge.style.display = 'inline-block';
+          navBadge.textContent = unread_count;
+          navBadge.style.display = 'inline-flex';
+        } else {
+          badge.style.display = 'none';
+          navBadge.style.display = 'none';
+        }
+
+        const list = document.getElementById('notifList');
+        if (!rows.length) {
+          list.innerHTML = '<div class="notif-item">No notifications yet.</div>';
+        } else {
+          list.innerHTML = rows.slice(0, 10).map(
+            (n) => `<div class="notif-item"><strong>${escHtml(n.title)}</strong><br>${escHtml(n.message)}</div>`
+          ).join('');
+        }
+      } catch { /* silent */ }
+    }
+
+    const notifBtn = document.getElementById('notifBtn');
+    const notifBox = document.getElementById('notifBox');
+    notifBtn.onclick = (e) => {
+      e.stopPropagation();
+      const open = notifBox.style.display === 'block';
+      notifBox.style.display = open ? 'none' : 'block';
+      if (!open) loadNotifDropdown();
+    };
+    window.addEventListener('click', () => { notifBox.style.display = 'none'; });
+
+    // ── Dashboard data ──
+    const err = document.getElementById('dash-error');
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const [requests, teams, meetings, unread] = await Promise.all([
+        GPApi.requests(),
+        GPApi.teams(),
+        GPApi.meetings(),
+        GPApi.notifUnreadCount(),
+      ]);
+
+      const unreadCount = unread.unread_count ?? 0;
+
+      document.getElementById('s-requests').textContent = requests.length;
+      document.getElementById('s-teams').textContent    = teams.length;
+      const upcoming = meetings.filter((m) => m.date >= today);
+      document.getElementById('s-meetings').textContent = upcoming.length;
+      document.getElementById('s-unread').textContent   = unreadCount;
+
+      // Requests card
+      document.getElementById('requestText').textContent =
+        requests.length ? `${requests.length} pending request(s)` : 'No pending requests';
+
+      // Teams card
+      if (teams.length) {
+        document.getElementById('teamSummary').textContent =
+          `${teams.length} team(s) assigned · First: ${teams[0].name}`;
+        const progress = Math.min(100, teams.length * 20);
+        document.getElementById('progressBar').style.width = progress + '%';
+      } else {
+        document.getElementById('teamSummary').textContent = 'No assigned teams yet';
+      }
+
+      // Next meeting
+      if (upcoming.length) {
+        const m = upcoming[0];
+        document.getElementById('nextMeetingText').textContent =
+          `Next Meeting: ${m.date} at ${m.time}`;
+      } else {
+        document.getElementById('nextMeetingText').textContent = 'No upcoming meetings';
+      }
+
+      // Sidebar badge
+      const navBadge = document.getElementById('nav-unread-badge');
+      if (unreadCount > 0) {
+        navBadge.textContent = unreadCount;
+        navBadge.style.display = 'inline-flex';
+      }
+
+    } catch (e) {
+      err.textContent = e.message || 'Failed to load data';
+      err.style.display = 'block';
+    }
+
+    function escHtml(s) {
+      if (!s) return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    loadNotifDropdown();
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><title>Student Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{--primary:#1a237e;--green:#2e7d32}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,sans-serif;background:#f3f4f7;min-height:100vh}
+.top-nav{display:flex;justify-content:flex-end;align-items:center;padding:15px 40px;gap:20px;background:#fff;border-bottom:1px solid #eee}
+.user-chip{display:flex;align-items:center;gap:10px;font-size:14px}
+.user-chip img{width:34px;height:34px;border-radius:50%}
+.logout-btn{background:none;border:1px solid #ccc;padding:7px 14px;border-radius:20px;cursor:pointer;font-size:13px;color:#555;transition:.2s}
+.logout-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.hero{text-align:center;padding:50px 20px 30px}
+.hero h1{font-size:2.2rem;font-weight:800;background:linear-gradient(to right,#1a237e,#3949ab);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#64748b;margin-top:8px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:40px;max-width:900px;margin:0 auto;padding:0 30px 50px}
+.card{background:#fff;border-radius:20px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 10px 30px rgba(0,0,0,.04);transition:.3s}
+.card:hover{transform:translateY(-8px);border-color:var(--primary);box-shadow:0 20px 40px rgba(26,35,126,.08)}
+.card-img{height:200px;overflow:hidden;border-bottom:1px solid #f0f0f0}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:.5s}
+.card:hover .card-img img{transform:scale(1.08)}
+.card-body{padding:25px;text-align:center}
+.card-body h2{font-size:1.4rem;color:var(--primary);margin-bottom:10px;font-weight:700}
+.card-body p{color:#64748b;font-size:.9rem;margin-bottom:20px;line-height:1.5}
+.btn{width:100%;padding:13px;border-radius:12px;border:none;font-weight:700;cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:8px;transition:.3s}
+.btn-blue{background:var(--primary);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn:hover{filter:brightness(1.15)}
+</style>
+</head>
+<body>
+<nav class="top-nav">
+    <div class="user-chip">
+        <img id="avatar" src="" alt="avatar">
+        <span id="uname">Student</span>
+    </div>
+    <button class="logout-btn" id="btn-out"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</nav>
+
+<div class="hero">
+    <h1>Manage Your Team</h1>
+    <p>Choose an action to start working with your graduation project team</p>
+</div>
+
+<div class="cards">
+    <div class="card">
+        <div class="card-img"><img src="https://i.postimg.cc/BvKz0Gz7/5935843600388262844.jpg" alt="Create"></div>
+        <div class="card-body">
+            <h2>Create New Team</h2>
+            <p>Set up a new team for your graduation project and become the team leader.</p>
+            <button class="btn btn-blue" onclick="location.href='/create_team.html'">Create Team <i class="fas fa-plus"></i></button>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-img"><img src="https://i.postimg.cc/k5QysMZp/5935843600388262845.jpg" alt="Join"></div>
+        <div class="card-body">
+            <h2>Join Existing Team</h2>
+            <p>Browse available teams and send a request to join one that matches your interests.</p>
+            <button class="btn btn-green" onclick="location.href='/join_team.html'">Join Team <i class="fas fa-sign-in-alt"></i></button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/api.js?v=2"></script>
+<script>
+    const u = GPApi.getUser();
+    if (!GPApi.getAccess() || !u || u.role !== 'student') {
+        location.href = '/login.html';
+    } else {
+        Teams.myTeam().then(t => { if (t) location.href = '/team_dashboard.html'; });
+        document.getElementById('uname').textContent = u.display_name || u.email;
+        document.getElementById('avatar').src =
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(u.display_name || u.email)}&background=1a237e&color=fff`;
+        document.getElementById('btn-out').onclick = async () => {
+            await GPApi.logout();
+            location.href = '/login.html';
+        };
+    }
+</script>
+</body>
+</html>
