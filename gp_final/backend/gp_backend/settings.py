@@ -1,16 +1,25 @@
 """
-Django settings — GP System (Windows, SQLite, serves frontend files)
+Django settings — GP System
+Auto-detects: SQLite locally, PostgreSQL on Render
 """
+
+import os
+import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 
-BASE_DIR     = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = BASE_DIR.parent / 'frontend'
 
-SECRET_KEY = 'django-insecure-gp-just-edu-jo-2025-windows-only-xyz'
-DEBUG       = True
-ALLOWED_HOSTS = ['*']
+# ─── Security ────────────────────────────────────────────────────────────────
+SECRET_KEY = os.environ.get(
+    'SECRET_KEY',
+    'django-insecure-gp-just-edu-jo-2025-windows-only-xyz'
+)
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+# ─── Apps ─────────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'daphne',
     'django.contrib.admin',
@@ -35,9 +44,11 @@ INSTALLED_APPS = [
     'apps.chat',
 ]
 
+# ─── Middleware ────────────────────────────────────────────────────────────────
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # ← لخدمة الستاتيك على Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -62,22 +73,38 @@ TEMPLATES = [
     },
 ]
 
+# ─── Database ─────────────────────────────────────────────────────────────────
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DATABASE_URL:
+    # Render / Production → PostgreSQL
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # Local → SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
+# ─── Auth ──────────────────────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'accounts.User'
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-     'OPTIONS': {'min_length': 4}},
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 4}
+    },
 ]
 
+# ─── DRF + JWT ─────────────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -90,30 +117,36 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':    timedelta(hours=12),
-    'REFRESH_TOKEN_LIFETIME':   timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS':    True,
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=12),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+# ─── CORS ──────────────────────────────────────────────────────────────────────
 CORS_ALLOW_ALL_ORIGINS = True
 
+# ─── Localization ──────────────────────────────────────────────────────────────
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE     = 'UTC'
-USE_I18N      = True
-USE_TZ        = True
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_TZ = True
 
-# Frontend files served as static files
-STATIC_URL       = '/static/'
-STATIC_ROOT      = BASE_DIR / 'staticfiles'
+# ─── Static & Media ────────────────────────────────────────────────────────────
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [FRONTEND_DIR]
 
-MEDIA_URL  = '/media/'
+# WhiteNoise — ضغط وكاش الملفات الستاتيك على Render
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ─── Business Logic ────────────────────────────────────────────────────────────
 GRADING_WEIGHTS = {
     'chief_supervisor': 0.50,
     'examiner_one':     0.25,
@@ -121,7 +154,7 @@ GRADING_WEIGHTS = {
 }
 MAX_TEAMS_PER_SUPERVISOR = 5
 
-# Channels
+# ─── Channels (WebSocket) ──────────────────────────────────────────────────────
 ASGI_APPLICATION = 'gp_backend.asgi.application'
 
 CHANNEL_LAYERS = {
