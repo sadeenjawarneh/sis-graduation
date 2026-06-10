@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'apps.meetings',
     'apps.grading',
     'apps.notifications',
+    'apps.activity',
     'apps.files',
     'apps.supervisor_context',
     'apps.chat',

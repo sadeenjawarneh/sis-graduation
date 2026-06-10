@@ -3,6 +3,8 @@ Admin-only API views — aggregate data from multiple apps for the admin panel.
 All endpoints require the requesting user to have role='admin'.
 """
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
@@ -32,6 +34,130 @@ def _letter(g):
     if g >= 67: return 'D+'
     if g >= 60: return 'D'
     return 'F'
+
+
+def _activity(action, description, related_type='team', related_id=None, created_by=None):
+    from apps.activity.models import ActivityLog
+    from apps.activity.services import log_activity
+
+    return log_activity(
+        action=action,
+        description=description,
+        related_type=related_type or ActivityLog.RelatedType.TEAM,
+        related_id=related_id,
+        created_by=created_by,
+    )
+
+
+def _student_team(student):
+    from apps.teams.models import Team
+
+    return Team.objects.filter(members=student).select_related('assigned_supervisor').first()
+
+
+def _student_payload(student):
+    team = _student_team(student)
+    return {
+        'id': student.id,
+        'name': student.display_name,
+        'email': student.email,
+        'sid': student.email,
+        'team_id': team.id if team else None,
+        'team': team.name if team else 'Unassigned',
+        'supervisor_id': team.assigned_supervisor_id if team else None,
+        'supervisor': team.assigned_supervisor.display_name if team and team.assigned_supervisor else 'Unassigned',
+        'status': 'Active' if student.is_active else 'Inactive',
+        'gpa': '-',
+    }
+
+
+def _team_payload(team):
+    return {
+        'id': team.id,
+        'name': team.name,
+        'members_count': team.members.count(),
+        'assigned_supervisor_id': team.assigned_supervisor_id,
+        'assigned_supervisor': team.assigned_supervisor.display_name if team.assigned_supervisor else None,
+    }
+
+
+def _team_groups(students):
+    count = len(students)
+    if count == 0:
+        return []
+    if count <= 5:
+        return [students]
+
+    group_count = (count + 4) // 5
+    while group_count > 1 and count // group_count < 3:
+        group_count -= 1
+
+    groups = [[] for _ in range(group_count)]
+    for index, student in enumerate(students):
+        groups[index % group_count].append(student)
+    return groups
+
+
+def _auto_merge_snapshot():
+    from apps.teams.models import Team
+
+    unassigned_students = list(
+        User.objects.filter(role='student', is_active=True)
+        .annotate(team_count=Count('member_teams'))
+        .filter(team_count=0)
+        .order_by('display_name', 'id')
+    )
+    teams_without_supervisor = list(
+        Team.objects.filter(assigned_supervisor__isnull=True)
+        .prefetch_related('members')
+        .order_by('created_at', 'id')
+    )
+    supervisors = list(
+        User.objects.filter(role='supervisor', is_active=True)
+        .annotate(assigned_count=Count('supervised_teams'))
+        .order_by('assigned_count', 'display_name', 'id')
+    )
+    groups = _team_groups(unassigned_students)
+
+    assignments = []
+    if supervisors:
+        load = {supervisor.id: supervisor.assigned_count for supervisor in supervisors}
+        for team in teams_without_supervisor:
+            supervisor = min(supervisors, key=lambda item: (load[item.id], item.display_name, item.id))
+            assignments.append({
+                'team_id': team.id,
+                'team_name': team.name,
+                'supervisor_id': supervisor.id,
+                'supervisor_name': supervisor.display_name,
+                'current_load': load[supervisor.id],
+            })
+            load[supervisor.id] += 1
+
+    return {
+        'unassigned_students': unassigned_students,
+        'teams_without_supervisor': teams_without_supervisor,
+        'supervisors': supervisors,
+        'groups': groups,
+        'assignments': assignments,
+    }
+
+
+def _auto_merge_preview_payload(snapshot):
+    return {
+        'unassigned_students_count': len(snapshot['unassigned_students']),
+        'teams_without_supervisors_count': len(snapshot['teams_without_supervisor']),
+        'available_supervisors_count': len(snapshot['supervisors']),
+        'teams_to_create': [
+            {
+                'size': len(group),
+                'student_ids': [student.id for student in group],
+                'student_names': [student.display_name for student in group],
+                'unavoidable_under_minimum': len(group) < 3,
+            }
+            for group in snapshot['groups']
+        ],
+        'supervisor_assignments': snapshot['assignments'],
+    }
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -289,6 +415,17 @@ def activity_list(request):
     # Build activity from real DB events
     activities = []
 
+    from apps.activity.models import ActivityLog
+    for log in ActivityLog.objects.select_related('created_by').order_by('-created_at')[:100]:
+        activities.append({
+            'action': log.action,
+            'description': log.description,
+            'created_at': log.created_at.isoformat(),
+            'related_type': log.related_type,
+            'related_id': log.related_id,
+            'created_by': log.created_by.display_name if log.created_by else 'System',
+        })
+
     from apps.requests.models import SupervisorRequest
     for r in SupervisorRequest.objects.select_related('team', 'leader').order_by('-created_at')[:50]:
         activities.append({
@@ -371,3 +508,232 @@ def student_detail(request, pk):
                 student.email = email
         student.save()
         return Response({'success': True, 'message': 'Student updated.'})
+
+
+# Updated admin team/student APIs. These definitions intentionally appear after
+# the legacy versions above so Django imports the model-compatible functions.
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def students_list(request):
+    guard = _admin_only(request)
+    if guard: return guard
+    from apps.teams.models import Team
+
+    if request.method == 'POST':
+        email = (request.data.get('email') or '').strip().lower()
+        name = (request.data.get('name') or email).strip()
+        team_id = request.data.get('team_id')
+        supervisor_id = request.data.get('supervisor_id')
+        if not email:
+            return Response({'error': 'Email is required.'}, status=400)
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({'error': 'User with this email already exists.'}, status=400)
+
+        with transaction.atomic():
+            student = User.objects.create_user(
+                email=email,
+                password='Student0*',
+                display_name=name,
+                role='student',
+                is_active=True,
+            )
+            team = None
+            if team_id not in (None, '', 0, '0'):
+                team = get_object_or_404(Team, pk=team_id)
+                if team.members.count() >= 5:
+                    return Response({'error': 'Team already has the maximum 5 students.'}, status=400)
+                team.members.add(student)
+                if not team.leader_id:
+                    team.leader = student
+                    team.save(update_fields=['leader'])
+            if supervisor_id not in (None, '', 0, '0'):
+                supervisor = get_object_or_404(User, pk=supervisor_id, role='supervisor')
+                if not team:
+                    return Response({'error': 'team_id is required when assigning a supervisor.'}, status=400)
+                team.assigned_supervisor = supervisor
+                team.save(update_fields=['assigned_supervisor'])
+
+        _activity(
+            'Student Created',
+            f'Student "{student.display_name}" was created' + (f' and added to "{team.name}".' if team else '.'),
+            'student',
+            student.id,
+            request.user,
+        )
+        return Response({'success': True, 'message': f'Student {name} created.', 'data': _student_payload(student)}, status=201)
+
+    students = User.objects.filter(role='student', is_active=True).order_by('display_name')
+    return Response({'success': True, 'students': [_student_payload(student) for student in students]})
+
+
+@api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def student_detail(request, pk):
+    guard = _admin_only(request)
+    if guard: return guard
+    from apps.teams.models import Team
+
+    student = get_object_or_404(User, pk=pk, role='student')
+    if request.method == 'DELETE':
+        student_name = student.display_name
+        student.delete()
+        _activity('Student Deleted', f'Student "{student_name}" was deleted.', 'student', pk, request.user)
+        return Response({'success': True, 'message': 'Student deleted.'})
+
+    if 'name' in request.data and request.data['name']:
+        student.display_name = request.data['name'].strip()
+    if 'email' in request.data and request.data['email']:
+        email = request.data['email'].strip().lower()
+        if not User.objects.filter(email__iexact=email).exclude(pk=student.pk).exists():
+            student.email = email
+    student.save()
+
+    if 'team_id' in request.data:
+        old_team = _student_team(student)
+        if old_team:
+            old_team.members.remove(student)
+            if old_team.leader_id == student.id:
+                replacement = old_team.members.first()
+                old_team.leader = replacement
+                old_team.save(update_fields=['leader'])
+        team_id = request.data.get('team_id')
+        if team_id not in (None, '', 0, '0'):
+            new_team = get_object_or_404(Team, pk=team_id)
+            if new_team.members.count() >= 5:
+                return Response({'error': 'Team already has the maximum 5 students.'}, status=400)
+            new_team.members.add(student)
+            if not new_team.leader_id:
+                new_team.leader = student
+                new_team.save(update_fields=['leader'])
+
+    _activity('Student Updated', f'Student "{student.display_name}" was updated.', 'student', student.id, request.user)
+    return Response({'success': True, 'message': 'Student updated.', 'data': _student_payload(student)})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def team_add_student(request, pk):
+    guard = _admin_only(request)
+    if guard: return guard
+    from apps.teams.models import MembershipRequest, Team
+
+    team = get_object_or_404(Team, pk=pk)
+    student = get_object_or_404(User, pk=request.data.get('student_id'), role='student', is_active=True)
+    if team.members.filter(pk=student.pk).exists():
+        return Response({'error': 'Student is already in this team.'}, status=400)
+    if team.members.count() >= 5:
+        return Response({'error': 'Team already has the maximum 5 students.'}, status=400)
+
+    with transaction.atomic():
+        old_team = _student_team(student)
+        if old_team:
+            old_team.members.remove(student)
+            if old_team.leader_id == student.id:
+                replacement = old_team.members.first()
+                old_team.leader = replacement
+                old_team.save(update_fields=['leader'])
+        team.members.add(student)
+        if not team.leader_id:
+            team.leader = student
+            team.save(update_fields=['leader'])
+        MembershipRequest.objects.filter(student=student, status='pending').update(status='rejected')
+
+    _activity('Student Added To Team', f'Admin added "{student.display_name}" to team "{team.name}".', 'team', team.id, request.user)
+    return Response({'success': True, 'message': 'Student added to team.', 'team': _team_payload(team)})
+
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def team_remove_student(request, pk, student_id):
+    guard = _admin_only(request)
+    if guard: return guard
+    from apps.teams.models import Team
+
+    team = get_object_or_404(Team, pk=pk)
+    student = get_object_or_404(User, pk=student_id, role='student')
+    if not team.members.filter(pk=student.pk).exists():
+        return Response({'error': 'Student is not in this team.'}, status=400)
+    team.members.remove(student)
+    if team.leader_id == student.id:
+        replacement = team.members.first()
+        team.leader = replacement
+        team.save(update_fields=['leader'])
+    _activity('Student Removed From Team', f'Admin removed "{student.display_name}" from team "{team.name}".', 'team', team.id, request.user)
+    return Response({'success': True, 'message': 'Student removed from team.', 'team': _team_payload(team)})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def team_assign_supervisor(request, pk):
+    guard = _admin_only(request)
+    if guard: return guard
+    from apps.teams.models import Team
+
+    team = get_object_or_404(Team, pk=pk)
+    supervisor_id = request.data.get('supervisor_id')
+    supervisor = None
+    if supervisor_id not in (None, '', 0, '0'):
+        supervisor = get_object_or_404(User, pk=supervisor_id, role='supervisor', is_active=True)
+    team.assigned_supervisor = supervisor
+    team.save(update_fields=['assigned_supervisor'])
+    message = f'Admin assigned "{supervisor.display_name}" to team "{team.name}".' if supervisor else f'Admin removed supervisor from team "{team.name}".'
+    _activity('Supervisor Assignment Changed', message, 'team', team.id, request.user)
+    return Response({'success': True, 'message': 'Supervisor assignment updated.', 'team': _team_payload(team)})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def auto_merge_preview(request):
+    guard = _admin_only(request)
+    if guard: return guard
+    return Response({'success': True, 'preview': _auto_merge_preview_payload(_auto_merge_snapshot())})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def auto_merge_run(request):
+    guard = _admin_only(request)
+    if guard: return guard
+    from apps.teams.models import Team, TeamStatus
+
+    created_teams = []
+    assigned_teams = []
+    with transaction.atomic():
+        snapshot = _auto_merge_snapshot()
+        for index, group in enumerate(snapshot['groups'], start=1):
+            if not group:
+                continue
+            base_name = f'Auto Team {timezone.now().strftime("%Y%m%d")}-{index}'
+            name = base_name
+            suffix = 1
+            while Team.objects.filter(name=name).exists():
+                suffix += 1
+                name = f'{base_name}-{suffix}'
+            team = Team.objects.create(
+                name=name,
+                project_title=name,
+                project_description='Automatically generated by Auto Merge & Assignment.',
+                status=TeamStatus.FORMING,
+                leader=group[0],
+            )
+            team.members.add(*group)
+            created_teams.append(team)
+            _activity('Auto Merge Team Created', f'Created "{team.name}" with {len(group)} student(s).', 'team', team.id, request.user)
+
+        snapshot = _auto_merge_snapshot()
+        for item in snapshot['assignments']:
+            team = Team.objects.select_for_update().get(pk=item['team_id'])
+            supervisor = User.objects.get(pk=item['supervisor_id'])
+            team.assigned_supervisor = supervisor
+            team.save(update_fields=['assigned_supervisor'])
+            assigned_teams.append(team)
+            _activity('Auto Merge Supervisor Assigned', f'Assigned "{supervisor.display_name}" to "{team.name}".', 'team', team.id, request.user)
+
+    return Response({
+        'success': True,
+        'message': 'Auto merge completed.',
+        'created_teams_count': len(created_teams),
+        'assigned_teams_count': len(assigned_teams),
+        'created_teams': [_team_payload(team) for team in created_teams],
+        'assigned_teams': [_team_payload(team) for team in assigned_teams],
+    })

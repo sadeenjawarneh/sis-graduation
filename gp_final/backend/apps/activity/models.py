@@ -18,7 +18,6 @@ class ActivityLog(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
 
     class Meta:
-        app_label = 'apps.activity'
         ordering = ['-created_at', '-pk']
 
     def __str__(self):

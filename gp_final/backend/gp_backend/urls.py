@@ -73,8 +73,15 @@ urlpatterns = [
     path('api/grades/<int:pk>/',             admin_api.grade_delete,     name='admin-grade-delete'),
     # Activity
     path('api/activity/',                    admin_api.activity_list,    name='admin-activity'),
+    # Auto Merge & Assignment
+    path('api/auto-merge/preview/',          admin_api.auto_merge_preview, name='admin-auto-merge-preview'),
+    path('api/auto-merge/run/',              admin_api.auto_merge_run,     name='admin-auto-merge-run'),
     # Students (admin CRUD)
     path('api/students/',                    admin_api.students_list,    name='admin-students'),
     path('api/students/create/',             admin_api.students_list,    name='admin-students-create'),
     path('api/students/<int:pk>/',           admin_api.student_detail,   name='admin-student-detail'),
+    # Team admin operations
+    path('api/teams/<int:pk>/students/',                 admin_api.team_add_student,       name='admin-team-add-student'),
+    path('api/teams/<int:pk>/students/<int:student_id>/', admin_api.team_remove_student,    name='admin-team-remove-student'),
+    path('api/teams/<int:pk>/supervisor/',               admin_api.team_assign_supervisor, name='admin-team-assign-supervisor'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
